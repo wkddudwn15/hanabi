@@ -1,6 +1,6 @@
 # Fireworks Simulator
 
-Unityで動く3D花火シミュレーターです。
+Unity 6.3 LTSで動く3D花火シミュレーターです。
 
 ## 条件への対応
 
@@ -19,7 +19,7 @@ Unityで動く3D花火シミュレーターです。
 
 ## Unity Editorでのビルド
 
-1. Unity 2022.3 LTS 以降でこのフォルダを開きます。
+1. Unity 6.3 LTS、6000.3.0f1 以降でこのフォルダを開きます。
 2. メニューから `Build > Build Standalone Linux`、`Build Standalone Windows`、または `Build Standalone macOS` を実行します。
 3. `Builds/` フォルダに実行ファイルが出力されます。
 

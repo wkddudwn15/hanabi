@@ -35,7 +35,12 @@ public static class BuildStandalone
 
     private static void Build(BuildTarget target, string outputPath)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+        var outputDirectory = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDirectory))
+        {
+            Directory.CreateDirectory(outputDirectory);
+        }
+
         var options = new BuildPlayerOptions
         {
             scenes = Scenes,
@@ -47,7 +52,7 @@ public static class BuildStandalone
         var report = BuildPipeline.BuildPlayer(options);
         if (report.summary.result != BuildResult.Succeeded)
         {
-            throw new BuildFailedException("Standalone build failed: " + report.summary.result);
+            throw new System.InvalidOperationException("Standalone build failed: " + report.summary.result);
         }
     }
 }
