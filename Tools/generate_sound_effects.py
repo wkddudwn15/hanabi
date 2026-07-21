@@ -99,6 +99,31 @@ def make_result():
     return samples
 
 
+def make_countdown():
+    duration = 0.18
+    samples = []
+    for i in range(int(SAMPLE_RATE * duration)):
+        t = i / SAMPLE_RATE
+        beep = 0.82 * sine(880.0, t) + 0.14 * sine(1760.0, t)
+        samples.append(beep * 0.24 * envelope(t, duration, 0.006, 0.035))
+    return samples
+
+
+def make_start():
+    duration = 0.42
+    samples = []
+    notes = [880.0, 1318.51]
+    note_duration = duration / len(notes)
+    for i in range(int(SAMPLE_RATE * duration)):
+        t = i / SAMPLE_RATE
+        note_index = min(len(notes) - 1, int(t / note_duration))
+        local_t = t - note_duration * note_index
+        freq = notes[note_index]
+        tone = 0.72 * sine(freq, local_t) + 0.18 * sine(freq * 2.0, local_t)
+        samples.append(tone * 0.30 * envelope(local_t, note_duration, 0.008, 0.045) * envelope(t, duration, 0.006, 0.050))
+    return samples
+
+
 def main():
     sounds = {
         "launch.wav": make_launch(),
@@ -106,6 +131,8 @@ def main():
         "good.wav": make_good(),
         "miss.wav": make_miss(),
         "result.wav": make_result(),
+        "countdown.wav": make_countdown(),
+        "start.wav": make_start(),
     }
     for filename, samples in sounds.items():
         write_wav(os.path.join(OUTPUT_DIR, filename), samples)

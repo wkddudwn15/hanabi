@@ -127,6 +127,8 @@ MonoBehaviour:
   goodSound: {fileID: 8300000, guid: 0ff8c153e5624ea78a0ab271e9ced885, type: 3}
   missSound: {fileID: 8300000, guid: 3887d7cc621e4bccac16797e16d02496, type: 3}
   resultSound: {fileID: 8300000, guid: ae575f36e9fb42db86c0ee2307b507a6, type: 3}
+  countdownSound: {fileID: 8300000, guid: b4498686b68646a68df23ddffed58053, type: 3}
+  startSound: {fileID: 8300000, guid: 6468491b2f43434fac8593f2f62f3402, type: 3}
 --- !u!82 &200003
 AudioSource:
   m_ObjectHideFlags: 0

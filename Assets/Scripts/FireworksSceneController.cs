@@ -14,6 +14,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private const float PerfectEnd = 1.00f;
     private const float GoodEnd = 1.60f;
     private const float MissTimeout = 2.20f;
+    private const float CountdownTotalSeconds = 3.7f;
 
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip launchSound;
@@ -21,6 +22,8 @@ public sealed class FireworksSceneController : MonoBehaviour
     [SerializeField] private AudioClip goodSound;
     [SerializeField] private AudioClip missSound;
     [SerializeField] private AudioClip resultSound;
+    [SerializeField] private AudioClip countdownSound;
+    [SerializeField] private AudioClip startSound;
 
     private readonly List<Rocket> rockets = new List<Rocket>();
     private readonly List<FireworkColor> targetQueue = new List<FireworkColor>();
@@ -33,6 +36,8 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Text comboText;
     private Text resultText;
     private RectTransform resultTextRect;
+    private Text countdownText;
+    private RectTransform countdownTextRect;
     private Text selectedColorText;
     private Text selectedColorNameText;
     private GameObject resultOverlayObject;
@@ -45,12 +50,15 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Vector2 lastPointerPosition;
     private bool pointerStartedOverUi;
     private bool resultShown;
+    private bool gameStarted;
     private FireworkColor selectedColor = FireworkColor.Red;
     private float targetStartedAt;
+    private float countdownTimer;
     private float resultDisplayTime;
     private float resultDisplayDuration = ResultDisplaySeconds;
     private float resultPopScale = 1f;
     private float remainingTime = GameDurationSeconds;
+    private int countdownCueIndex = -1;
     private float yaw;
     private float pitch = 18f;
     private float distance = 34f;
@@ -71,6 +79,14 @@ public sealed class FireworksSceneController : MonoBehaviour
 
     private void Update()
     {
+        UpdateCountdown();
+
+        if (!gameStarted)
+        {
+            UpdateHud();
+            return;
+        }
+
         UpdateTimer();
         UpdateResultDisplay();
 
@@ -186,6 +202,12 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateTargetQueueUi(canvasObject.transform);
         resultText = CreateText(canvasObject.transform, string.Empty, 42, FontStyle.Bold, new Vector2(0f, 72f), new Vector2(360f, 70f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         resultTextRect = resultText.GetComponent<RectTransform>();
+        countdownText = CreateText(canvasObject.transform, string.Empty, 80, FontStyle.Bold, Vector2.zero, new Vector2(520f, 110f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        countdownText.color = Color.white;
+        countdownTextRect = countdownText.GetComponent<RectTransform>();
+        var countdownOutline = countdownText.gameObject.AddComponent<Outline>();
+        countdownOutline.effectColor = new Color(0f, 0f, 0f, 0.70f);
+        countdownOutline.effectDistance = new Vector2(3f, -3f);
         timeText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -18f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         scoreText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -58f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         comboText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -98f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
@@ -575,6 +597,108 @@ public sealed class FireworksSceneController : MonoBehaviour
         SceneManager.LoadScene("TitleScene");
     }
 
+    private void UpdateCountdown()
+    {
+        if (gameStarted || resultShown)
+        {
+            return;
+        }
+
+        countdownTimer += Time.deltaTime;
+        var cueIndex = GetCountdownCueIndex(countdownTimer);
+        if (cueIndex != countdownCueIndex)
+        {
+            countdownCueIndex = cueIndex;
+            if (cueIndex >= 0 && cueIndex <= 2)
+            {
+                PlaySound(countdownSound);
+            }
+            else if (cueIndex == 3)
+            {
+                PlaySound(startSound);
+            }
+        }
+
+        if (countdownTimer >= CountdownTotalSeconds)
+        {
+            BeginGame();
+            return;
+        }
+
+        UpdateCountdownText(cueIndex);
+    }
+
+    private int GetCountdownCueIndex(float elapsed)
+    {
+        if (elapsed < 1f)
+        {
+            return 0;
+        }
+
+        if (elapsed < 2f)
+        {
+            return 1;
+        }
+
+        if (elapsed < 3f)
+        {
+            return 2;
+        }
+
+        return 3;
+    }
+
+    private void UpdateCountdownText(int cueIndex)
+    {
+        if (countdownText == null)
+        {
+            return;
+        }
+
+        switch (cueIndex)
+        {
+            case 0:
+                countdownText.text = "3";
+                countdownText.fontSize = 84;
+                break;
+            case 1:
+                countdownText.text = "2";
+                countdownText.fontSize = 84;
+                break;
+            case 2:
+                countdownText.text = "1";
+                countdownText.fontSize = 84;
+                break;
+            default:
+                countdownText.text = "START!";
+                countdownText.fontSize = 62;
+                break;
+        }
+
+        if (countdownTextRect != null)
+        {
+            var phaseElapsed = cueIndex < 3 ? countdownTimer - cueIndex : countdownTimer - 3f;
+            var scale = Mathf.Lerp(1.12f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(phaseElapsed * 2.2f)));
+            countdownTextRect.localScale = Vector3.one * scale;
+            countdownTextRect.SetAsLastSibling();
+        }
+    }
+
+    private void BeginGame()
+    {
+        gameStarted = true;
+        targetStartedAt = Time.time;
+        if (countdownText != null)
+        {
+            countdownText.text = string.Empty;
+        }
+
+        if (countdownTextRect != null)
+        {
+            countdownTextRect.localScale = Vector3.one;
+        }
+    }
+
     private void EnsureAudioSource()
     {
         if (audioSource != null)
@@ -693,13 +817,12 @@ public sealed class FireworksSceneController : MonoBehaviour
             targetQueue.Add(GetRandomFireworkColor());
         }
 
-        targetStartedAt = Time.time;
         UpdateHud();
     }
 
     private void FinishCurrentTarget(JudgmentResult result)
     {
-        if (remainingTime <= 0f)
+        if (!gameStarted || remainingTime <= 0f)
         {
             return;
         }
@@ -710,7 +833,7 @@ public sealed class FireworksSceneController : MonoBehaviour
 
     private void AdvanceTargetQueue()
     {
-        if (remainingTime <= 0f)
+        if (!gameStarted || remainingTime <= 0f)
         {
             return;
         }
@@ -731,7 +854,7 @@ public sealed class FireworksSceneController : MonoBehaviour
 
     private void UpdateTargetTimeout()
     {
-        if (remainingTime <= 0f)
+        if (!gameStarted || remainingTime <= 0f)
         {
             return;
         }
@@ -889,7 +1012,7 @@ public sealed class FireworksSceneController : MonoBehaviour
 
     private void LaunchRocket()
     {
-        if (remainingTime <= 0f)
+        if (!gameStarted || remainingTime <= 0f)
         {
             return;
         }
