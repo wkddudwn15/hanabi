@@ -73,14 +73,24 @@ public sealed class RuleSceneController : MonoBehaviour
 
         EnsureEventSystem();
 
-        var panel = CreatePanel(canvasObject.transform, new Vector2(0f, 52f), new Vector2(760f, 460f));
-        CreateText(panel.transform, "花火リズム！", 42, FontStyle.Bold, new Vector2(0f, 176f), new Vector2(680f, 58f));
-        CreateText(panel.transform, "30秒間でハイスコアを目指そう！", 24, FontStyle.Bold, new Vector2(0f, 112f), new Vector2(680f, 42f));
-        CreateText(panel.transform, "画面に表示された色に合わせて\n対応するキーを選んでください。\n選んだ色の花火は左クリックで発射します。", 21, FontStyle.Normal, new Vector2(0f, 30f), new Vector2(680f, 104f));
-        CreateText(panel.transform, "A：赤\nS：青\nD：黄\nF：緑", 23, FontStyle.Bold, new Vector2(-170f, -104f), new Vector2(220f, 126f));
-        CreateText(panel.transform, "PERFECT：3点\nGOOD：2点\nMISS：0点", 22, FontStyle.Bold, new Vector2(180f, -104f), new Vector2(260f, 104f));
-        CreateButton(canvasObject.transform, "ゲーム開始", new Vector2(-146f, -232f), () => SceneManager.LoadScene("GameScene"));
-        CreateButton(canvasObject.transform, "タイトルへ戻る", new Vector2(146f, -232f), () => SceneManager.LoadScene("TitleScene"));
+        var panel = CreatePanel(canvasObject.transform, new Vector2(0f, 30f), new Vector2(860f, 540f));
+        CreateText(panel.transform, "遊び方", 30, FontStyle.Bold, new Vector2(0f, 226f), new Vector2(760f, 44f), TextAnchor.MiddleCenter, new Color(0.95f, 0.97f, 1f));
+
+        CreateSection(panel.transform, "1. 色を装填する", "A/S/D/Fキーで、次に打ち上げる花火の色を選びます。", new Vector2(-220f, 150f), new Vector2(340f, 82f));
+        CreateColorKey(panel.transform, "A", "赤", new Color(1f, 0.24f, 0.22f), new Vector2(126f, 163f));
+        CreateColorKey(panel.transform, "S", "青", new Color(0.24f, 0.50f, 1f), new Vector2(262f, 163f));
+        CreateColorKey(panel.transform, "D", "黄", new Color(1f, 0.88f, 0.24f), new Vector2(126f, 118f));
+        CreateColorKey(panel.transform, "F", "緑", new Color(0.25f, 0.95f, 0.38f), new Vector2(262f, 118f));
+
+        CreateSection(panel.transform, "2. 花火を打ち上げる", "左クリックで、装填中の花火を打ち上げます。", new Vector2(0f, 54f), new Vector2(740f, 64f));
+        CreateSection(panel.transform, "3. タイミングを合わせる", "打ち上げ予定を確認し、正しい色をタイミングよく打ち上げます。", new Vector2(-190f, -34f), new Vector2(420f, 78f));
+        CreateText(panel.transform, "PERFECT：3点\nGOOD：2点\nMISS：0点", 17, FontStyle.Bold, new Vector2(250f, -34f), new Vector2(220f, 78f), TextAnchor.MiddleLeft, new Color(0.90f, 0.94f, 1f));
+
+        CreateSection(panel.transform, "4. その他の操作", "ドラッグ：カメラ回転\nマウスホイール：ズーム", new Vector2(-190f, -130f), new Vector2(360f, 78f));
+        CreateText(panel.transform, "制限時間は30秒です。\n高得点と最大コンボを目指してください。", 15, FontStyle.Normal, new Vector2(230f, -130f), new Vector2(300f, 72f), TextAnchor.MiddleLeft, new Color(0.84f, 0.89f, 0.98f));
+
+        CreateButton(canvasObject.transform, "ゲーム開始", new Vector2(-146f, -288f), () => SceneManager.LoadScene("GameScene"));
+        CreateButton(canvasObject.transform, "タイトルへ戻る", new Vector2(146f, -288f), () => SceneManager.LoadScene("TitleScene"));
     }
 
     private static GameObject CreatePanel(Transform parent, Vector2 position, Vector2 dimensions)
@@ -98,7 +108,47 @@ public sealed class RuleSceneController : MonoBehaviour
         return panelObject;
     }
 
+    private static void CreateSection(Transform parent, string heading, string body, Vector2 position, Vector2 dimensions)
+    {
+        CreateText(parent, heading, 20, FontStyle.Bold, new Vector2(position.x, position.y + 18f), new Vector2(dimensions.x, 28f), TextAnchor.MiddleLeft, new Color(0.96f, 0.98f, 1f));
+        CreateText(parent, body, 16, FontStyle.Normal, new Vector2(position.x, position.y - 18f), new Vector2(dimensions.x, dimensions.y - 30f), TextAnchor.UpperLeft, new Color(0.84f, 0.89f, 0.98f));
+    }
+
+    private static void CreateColorKey(Transform parent, string key, string colorName, Color swatchColor, Vector2 position)
+    {
+        var keyObject = new GameObject(key + " " + colorName);
+        keyObject.transform.SetParent(parent, false);
+        var rect = keyObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(116f, 34f);
+
+        var image = keyObject.AddComponent<Image>();
+        image.color = new Color(0.11f, 0.14f, 0.22f, 0.92f);
+        var outline = keyObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.48f);
+        outline.effectDistance = new Vector2(1f, -1f);
+
+        var swatch = new GameObject("Color Swatch");
+        swatch.transform.SetParent(keyObject.transform, false);
+        var swatchRect = swatch.AddComponent<RectTransform>();
+        swatchRect.anchorMin = new Vector2(0f, 0.5f);
+        swatchRect.anchorMax = new Vector2(0f, 0.5f);
+        swatchRect.pivot = new Vector2(0f, 0.5f);
+        swatchRect.anchoredPosition = new Vector2(10f, 0f);
+        swatchRect.sizeDelta = new Vector2(16f, 16f);
+        swatch.AddComponent<Image>().color = swatchColor;
+
+        CreateText(keyObject.transform, key + "：" + colorName, 17, FontStyle.Bold, new Vector2(15f, 0f), new Vector2(86f, 30f), TextAnchor.MiddleCenter, new Color(0.92f, 0.95f, 1f));
+    }
+
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions)
+    {
+        return CreateText(parent, value, size, style, position, dimensions, TextAnchor.MiddleCenter, new Color(0.92f, 0.95f, 1f));
+    }
+
+    private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions, TextAnchor alignment, Color color)
     {
         var textObject = new GameObject(value);
         textObject.transform.SetParent(parent, false);
@@ -113,8 +163,8 @@ public sealed class RuleSceneController : MonoBehaviour
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = size;
         text.fontStyle = style;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.color = new Color(0.92f, 0.95f, 1f);
+        text.alignment = alignment;
+        text.color = color;
         return text;
     }
 
@@ -129,13 +179,24 @@ public sealed class RuleSceneController : MonoBehaviour
         rect.sizeDelta = new Vector2(240f, 52f);
 
         var image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.14f, 0.18f, 0.28f, 0.94f);
+        image.color = new Color(0.13f, 0.17f, 0.25f, 0.96f);
+        var outline = buttonObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.50f);
+        outline.effectDistance = new Vector2(1f, -1f);
 
         var button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
+        var colors = button.colors;
+        colors.normalColor = new Color(0.13f, 0.17f, 0.25f, 0.96f);
+        colors.highlightedColor = new Color(0.15f, 0.19f, 0.28f, 0.98f);
+        colors.pressedColor = new Color(0.10f, 0.13f, 0.20f, 1f);
+        colors.selectedColor = colors.normalColor;
+        colors.colorMultiplier = 1f;
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
         button.onClick.AddListener(action);
 
-        CreateText(buttonObject.transform, label, 22, FontStyle.Bold, Vector2.zero, rect.sizeDelta);
+        CreateText(buttonObject.transform, label, 22, FontStyle.Bold, Vector2.zero, rect.sizeDelta, TextAnchor.MiddleCenter, new Color(0.92f, 0.95f, 1f));
         return button;
     }
 

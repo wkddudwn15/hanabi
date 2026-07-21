@@ -73,10 +73,10 @@ public sealed class TitleSceneController : MonoBehaviour
 
         EnsureEventSystem();
 
-        CreateText(canvasObject.transform, "3D Fireworks Simulator", 44, FontStyle.Bold, new Vector2(0f, 142f), new Vector2(780f, 70f));
-        CreateText(canvasObject.transform, "クリックで花火を打ち上げ、ドラッグとホイールでカメラを操作します。", 22, FontStyle.Normal, new Vector2(0f, 78f), new Vector2(820f, 48f));
-        CreateButton(canvasObject.transform, "Start", new Vector2(0f, -12f), () => SceneManager.LoadScene("RuleScene"));
-        CreateButton(canvasObject.transform, "Quit", new Vector2(0f, -92f), QuitApplication);
+        CreateText(canvasObject.transform, "花火打ち上げゲーム", 48, FontStyle.Bold, new Vector2(0f, 158f), new Vector2(820f, 76f));
+        CreateText(canvasObject.transform, "打ち上げ予定を読み、正しい色を装填して花火を上げよう。", 21, FontStyle.Normal, new Vector2(0f, 92f), new Vector2(840f, 46f));
+        CreateButton(canvasObject.transform, "START", new Vector2(0f, -28f), () => SceneManager.LoadScene("RuleScene"));
+        CreateButton(canvasObject.transform, "QUIT", new Vector2(0f, -108f), QuitApplication);
     }
 
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions)
