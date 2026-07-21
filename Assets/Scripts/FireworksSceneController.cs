@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public sealed class FireworksSceneController : MonoBehaviour
 {
+    private const string HighScoreKey = "HighScore";
     private const float GameDurationSeconds = 30f;
     private const float ResultDisplaySeconds = 0.75f;
     private const int ComboBaseFontSize = 28;
@@ -44,6 +45,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Text finalScoreText;
     private Text finalMaxComboText;
     private Text finalRankText;
+    private Text newRecordText;
     private Outline finalRankOutline;
     private Vector3 launcherPosition = new Vector3(0f, 1.15f, 0f);
     private Vector2 pointerDownPosition;
@@ -51,6 +53,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private bool pointerStartedOverUi;
     private bool resultShown;
     private bool gameStarted;
+    private bool isNewRecord;
     private FireworkColor selectedColor = FireworkColor.Red;
     private float targetStartedAt;
     private float countdownTimer;
@@ -65,6 +68,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private int score;
     private int currentCombo;
     private int maxCombo;
+    private int highScore;
 
     private void Start()
     {
@@ -74,6 +78,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateWorld();
         CreateUi();
         EnsureAudioSource();
+        highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
         InitializeTargetQueue();
     }
 
@@ -396,7 +401,10 @@ public sealed class FireworksSceneController : MonoBehaviour
 
         var currentY = 28f;
         CreateText(panelObject.transform, "TIME UP", 30, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 40f)), new Vector2(330f, 40f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        currentY += 62f;
+        newRecordText = CreateText(panelObject.transform, "NEW RECORD!", 16, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, 72f, 20f)), new Vector2(260f, 20f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        newRecordText.color = new Color(1f, 0.94f, 0.36f, 1f);
+        newRecordText.enabled = false;
+        currentY += 76f;
         CreateText(panelObject.transform, "SCORE", 14, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 18f)), new Vector2(220f, 18f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         currentY += 20f;
         finalScoreText = CreateText(panelObject.transform, "0", 25, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 34f)), new Vector2(220f, 34f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
@@ -476,6 +484,14 @@ public sealed class FireworksSceneController : MonoBehaviour
         remainingTime = 0f;
         resultDisplayTime = 0f;
         var finalScore = score;
+        isNewRecord = finalScore > highScore;
+        if (isNewRecord)
+        {
+            highScore = finalScore;
+            PlayerPrefs.SetInt(HighScoreKey, finalScore);
+            PlayerPrefs.Save();
+        }
+
         if (resultText != null)
         {
             resultText.text = string.Empty;
@@ -489,6 +505,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         if (finalMaxComboText != null)
         {
             finalMaxComboText.text = maxCombo.ToString();
+        }
+
+        if (newRecordText != null)
+        {
+            newRecordText.enabled = isNewRecord;
         }
 
         var finalRank = GetRank(finalScore);
@@ -532,7 +553,7 @@ public sealed class FireworksSceneController : MonoBehaviour
             panelHeight
         );
         var currentY = 28f * scaleY;
-        currentY += 62f * scaleY;
+        currentY += 76f * scaleY;
         currentY += 20f * scaleY;
         currentY += 44f * scaleY;
         currentY += 20f * scaleY;
