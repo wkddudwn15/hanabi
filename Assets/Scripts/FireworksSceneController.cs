@@ -99,6 +99,10 @@ public sealed class FireworksSceneController : MonoBehaviour
         mainCamera.clearFlags = CameraClearFlags.SolidColor;
         mainCamera.backgroundColor = new Color(0.005f, 0.008f, 0.025f);
         mainCamera.fieldOfView = 55f;
+        if (FindObjectOfType<AudioListener>() == null)
+        {
+            cameraObject.AddComponent<AudioListener>();
+        }
 
         ApplyCameraOrbit();
     }
