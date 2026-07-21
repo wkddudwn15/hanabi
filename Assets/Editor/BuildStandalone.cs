@@ -7,6 +7,7 @@ public static class BuildStandalone
     private static readonly string[] Scenes =
     {
         "Assets/Scenes/TitleScene.unity",
+        "Assets/Scenes/RuleScene.unity",
         "Assets/Scenes/GameScene.unity"
     };
 

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public sealed class TitleSceneController : MonoBehaviour
+public sealed class RuleSceneController : MonoBehaviour
 {
     private static readonly Color Night = new Color(0.01f, 0.015f, 0.035f);
 
@@ -13,19 +13,19 @@ public sealed class TitleSceneController : MonoBehaviour
         RenderSettings.ambientEquatorColor = new Color(0.10f, 0.11f, 0.16f);
         RenderSettings.ambientGroundColor = new Color(0.04f, 0.04f, 0.05f);
 
-        var cameraObject = new GameObject("Title Camera");
+        var cameraObject = new GameObject("Rule Camera");
         var camera = cameraObject.AddComponent<Camera>();
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = Night;
         camera.transform.position = new Vector3(0f, 4f, -10f);
         camera.transform.LookAt(Vector3.up * 2f);
 
-        CreateTitleLights();
+        CreateRuleLights();
         CreatePreviewLauncher();
         CreateCanvas();
     }
 
-    private static void CreateTitleLights()
+    private static void CreateRuleLights()
     {
         var moon = new GameObject("Moon Light").AddComponent<Light>();
         moon.type = LightType.Directional;
@@ -64,7 +64,7 @@ public sealed class TitleSceneController : MonoBehaviour
 
     private static void CreateCanvas()
     {
-        var canvasObject = new GameObject("Title Canvas");
+        var canvasObject = new GameObject("Rule Canvas");
         var canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -73,10 +73,13 @@ public sealed class TitleSceneController : MonoBehaviour
 
         EnsureEventSystem();
 
-        CreateText(canvasObject.transform, "3D Fireworks Simulator", 44, FontStyle.Bold, new Vector2(0f, 142f), new Vector2(780f, 70f));
-        CreateText(canvasObject.transform, "クリックで花火を打ち上げ、ドラッグとホイールでカメラを操作します。", 22, FontStyle.Normal, new Vector2(0f, 78f), new Vector2(820f, 48f));
-        CreateButton(canvasObject.transform, "Start", new Vector2(0f, -12f), () => SceneManager.LoadScene("RuleScene"));
-        CreateButton(canvasObject.transform, "Quit", new Vector2(0f, -92f), QuitApplication);
+        CreateText(canvasObject.transform, "花火リズム！", 44, FontStyle.Bold, new Vector2(0f, 210f), new Vector2(780f, 70f));
+        CreateText(canvasObject.transform, "30秒間でハイスコアを目指そう！", 24, FontStyle.Bold, new Vector2(0f, 146f), new Vector2(820f, 46f));
+        CreateText(canvasObject.transform, "画面に表示された色に合わせて\n対応するキーを押してください。", 22, FontStyle.Normal, new Vector2(0f, 82f), new Vector2(820f, 72f));
+        CreateText(canvasObject.transform, "A：赤\nS：青\nD：黄\nF：緑", 24, FontStyle.Bold, new Vector2(0f, -16f), new Vector2(360f, 120f));
+        CreateText(canvasObject.transform, "PERFECT：3点\nGOOD：2点\nMISS：0点", 22, FontStyle.Bold, new Vector2(0f, -126f), new Vector2(420f, 100f));
+        CreateButton(canvasObject.transform, "ゲーム開始", new Vector2(-130f, -258f), () => SceneManager.LoadScene("GameScene"));
+        CreateButton(canvasObject.transform, "タイトルへ戻る", new Vector2(130f, -258f), () => SceneManager.LoadScene("TitleScene"));
     }
 
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions)
@@ -116,7 +119,7 @@ public sealed class TitleSceneController : MonoBehaviour
         button.targetGraphic = image;
         button.onClick.AddListener(action);
 
-        CreateText(buttonObject.transform, label, 23, FontStyle.Bold, Vector2.zero, rect.sizeDelta);
+        CreateText(buttonObject.transform, label, 22, FontStyle.Bold, Vector2.zero, rect.sizeDelta);
         return button;
     }
 
@@ -139,14 +142,5 @@ public sealed class TitleSceneController : MonoBehaviour
         var eventSystem = new GameObject("EventSystem");
         eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
         eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
-    }
-
-    private static void QuitApplication()
-    {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
     }
 }
