@@ -73,13 +73,29 @@ public sealed class RuleSceneController : MonoBehaviour
 
         EnsureEventSystem();
 
-        CreateText(canvasObject.transform, "花火リズム！", 44, FontStyle.Bold, new Vector2(0f, 210f), new Vector2(780f, 70f));
-        CreateText(canvasObject.transform, "30秒間でハイスコアを目指そう！", 24, FontStyle.Bold, new Vector2(0f, 146f), new Vector2(820f, 46f));
-        CreateText(canvasObject.transform, "画面に表示された色に合わせて\n対応するキーを押してください。", 22, FontStyle.Normal, new Vector2(0f, 82f), new Vector2(820f, 72f));
-        CreateText(canvasObject.transform, "A：赤\nS：青\nD：黄\nF：緑", 24, FontStyle.Bold, new Vector2(0f, -16f), new Vector2(360f, 120f));
-        CreateText(canvasObject.transform, "PERFECT：3点\nGOOD：2点\nMISS：0点", 22, FontStyle.Bold, new Vector2(0f, -126f), new Vector2(420f, 100f));
-        CreateButton(canvasObject.transform, "ゲーム開始", new Vector2(-130f, -258f), () => SceneManager.LoadScene("GameScene"));
-        CreateButton(canvasObject.transform, "タイトルへ戻る", new Vector2(130f, -258f), () => SceneManager.LoadScene("TitleScene"));
+        var panel = CreatePanel(canvasObject.transform, new Vector2(0f, 52f), new Vector2(760f, 460f));
+        CreateText(panel.transform, "花火リズム！", 42, FontStyle.Bold, new Vector2(0f, 176f), new Vector2(680f, 58f));
+        CreateText(panel.transform, "30秒間でハイスコアを目指そう！", 24, FontStyle.Bold, new Vector2(0f, 112f), new Vector2(680f, 42f));
+        CreateText(panel.transform, "画面に表示された色に合わせて\n対応するキーを選んでください。\n選んだ色の花火は左クリックで発射します。", 21, FontStyle.Normal, new Vector2(0f, 30f), new Vector2(680f, 104f));
+        CreateText(panel.transform, "A：赤\nS：青\nD：黄\nF：緑", 23, FontStyle.Bold, new Vector2(-170f, -104f), new Vector2(220f, 126f));
+        CreateText(panel.transform, "PERFECT：3点\nGOOD：2点\nMISS：0点", 22, FontStyle.Bold, new Vector2(180f, -104f), new Vector2(260f, 104f));
+        CreateButton(canvasObject.transform, "ゲーム開始", new Vector2(-146f, -232f), () => SceneManager.LoadScene("GameScene"));
+        CreateButton(canvasObject.transform, "タイトルへ戻る", new Vector2(146f, -232f), () => SceneManager.LoadScene("TitleScene"));
+    }
+
+    private static GameObject CreatePanel(Transform parent, Vector2 position, Vector2 dimensions)
+    {
+        var panelObject = new GameObject("Rule Description Panel");
+        panelObject.transform.SetParent(parent, false);
+        var rect = panelObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = dimensions;
+
+        var image = panelObject.AddComponent<Image>();
+        image.color = new Color(0.02f, 0.025f, 0.04f, 0.70f);
+        return panelObject;
     }
 
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions)
