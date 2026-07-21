@@ -393,11 +393,12 @@ public sealed class FireworksSceneController : MonoBehaviour
         finalRankOutline.enabled = false;
         finalRankOutline.effectColor = new Color(0f, 0f, 0f, 0.45f);
         finalRankOutline.effectDistance = new Vector2(2f, -2f);
-        currentY += 72f;
-        var buttonY = GetPanelAnchoredY(panelDimensions.y, currentY, 46f);
+        var buttonDimensions = new Vector2(150f, 46f);
+        var buttonBottomMargin = 24f;
+        var buttonY = (-panelDimensions.y * 0.5f) + buttonBottomMargin + (buttonDimensions.y * 0.5f);
 
-        CreateResultButton(panelObject.transform, "RETRY", new Vector2(-92f, buttonY), new Vector2(150f, 46f), RestartGame);
-        CreateResultButton(panelObject.transform, "TITLE", new Vector2(92f, buttonY), new Vector2(150f, 46f), ReturnToTitle);
+        CreateResultButton(panelObject.transform, "RETRY", new Vector2(-92f, buttonY), buttonDimensions, RestartGame);
+        CreateResultButton(panelObject.transform, "TITLE", new Vector2(92f, buttonY), buttonDimensions, ReturnToTitle);
 
         resultOverlayObject.SetActive(false);
     }
@@ -414,15 +415,26 @@ public sealed class FireworksSceneController : MonoBehaviour
         rect.sizeDelta = dimensions;
 
         var image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.18f, 0.23f, 0.34f, 1f);
+        image.color = new Color(0.13f, 0.17f, 0.25f, 1f);
         var outline = buttonObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.80f, 0.88f, 1f, 0.70f);
-        outline.effectDistance = new Vector2(2f, -2f);
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.58f);
+        outline.effectDistance = new Vector2(1f, -1f);
 
         var button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
+        button.transition = Selectable.Transition.ColorTint;
+        var colors = button.colors;
+        colors.normalColor = new Color(0.13f, 0.17f, 0.25f, 1f);
+        colors.highlightedColor = new Color(0.15f, 0.19f, 0.28f, 1f);
+        colors.pressedColor = new Color(0.10f, 0.13f, 0.20f, 1f);
+        colors.selectedColor = colors.normalColor;
+        colors.disabledColor = new Color(0.13f, 0.17f, 0.25f, 0.45f);
+        colors.colorMultiplier = 1f;
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
         button.onClick.AddListener(action);
-        CreateText(buttonObject.transform, label, 18, FontStyle.Bold, Vector2.zero, dimensions, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        var labelText = CreateText(buttonObject.transform, label, 18, FontStyle.Bold, Vector2.zero, dimensions, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        labelText.color = new Color(0.92f, 0.95f, 1f, 0.94f);
         return button;
     }
 
