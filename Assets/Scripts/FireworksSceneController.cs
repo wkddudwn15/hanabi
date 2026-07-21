@@ -25,11 +25,17 @@ public sealed class FireworksSceneController : MonoBehaviour
     [SerializeField] private AudioClip resultSound;
     [SerializeField] private AudioClip countdownSound;
     [SerializeField] private AudioClip startSound;
+    [SerializeField] private Material groundMaterial;
+    [SerializeField] private Material launcherBaseMaterial;
+    [SerializeField] private Material launcherTubeMaterial;
+    [SerializeField] private Material starEmissionMaterial;
+    [SerializeField] private Material fireworkParticleMaterial;
 
     private readonly List<Rocket> rockets = new List<Rocket>();
     private readonly List<FireworkColor> targetQueue = new List<FireworkColor>();
     private readonly List<TargetSlotUi> targetSlotUis = new List<TargetSlotUi>();
     private readonly List<ColorControlUi> colorControlUis = new List<ColorControlUi>();
+    private readonly HashSet<string> missingMaterialWarnings = new HashSet<string>();
     private Camera mainCamera;
     private Transform cameraRig;
     private Text timeText;
@@ -164,20 +170,20 @@ public sealed class FireworksSceneController : MonoBehaviour
         var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
         ground.name = "Ground";
         ground.transform.localScale = new Vector3(10f, 1f, 10f);
-        ground.GetComponent<Renderer>().material = MakeStandardMaterial(new Color(0.055f, 0.075f, 0.11f), 0.05f, 0.32f);
+        AssignSharedMaterial(ground.GetComponent<Renderer>(), groundMaterial, "Ground Material");
 
         var baseObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         baseObject.name = "Launcher Base";
         baseObject.transform.position = new Vector3(0f, 0.2f, 0f);
         baseObject.transform.localScale = new Vector3(1.8f, 0.4f, 1.8f);
-        baseObject.GetComponent<Renderer>().material = MakeStandardMaterial(new Color(0.23f, 0.27f, 0.34f), 0.30f, 0.34f);
+        AssignSharedMaterial(baseObject.GetComponent<Renderer>(), launcherBaseMaterial, "Launcher Base Material");
 
         var tube = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         tube.name = "Launcher Tube";
         tube.transform.position = new Vector3(0f, 1.35f, 0f);
         tube.transform.rotation = Quaternion.Euler(0f, 0f, -8f);
         tube.transform.localScale = new Vector3(0.42f, 1.55f, 0.42f);
-        tube.GetComponent<Renderer>().material = MakeStandardMaterial(new Color(0.46f, 0.54f, 0.65f), 0.45f, 0.42f);
+        AssignSharedMaterial(tube.GetComponent<Renderer>(), launcherTubeMaterial, "Launcher Tube Material");
 
         for (var i = 0; i < 130; i++)
         {
@@ -186,7 +192,12 @@ public sealed class FireworksSceneController : MonoBehaviour
             star.transform.position = Random.onUnitSphere * Random.Range(55f, 85f);
             star.transform.position = new Vector3(star.transform.position.x, Mathf.Abs(star.transform.position.y) + 18f, star.transform.position.z);
             star.transform.localScale = Vector3.one * Random.Range(0.035f, 0.075f);
-            star.GetComponent<Renderer>().material = MakeEmissionMaterial(Color.white * Random.Range(0.55f, 1f), 0.65f);
+            var starRenderer = star.GetComponent<Renderer>();
+            var starMaterial = MakeEmissionMaterial(Color.white * Random.Range(0.55f, 1f), 0.65f);
+            if (starMaterial != null)
+            {
+                starRenderer.material = starMaterial;
+            }
             Destroy(star.GetComponent<Collider>());
         }
     }
@@ -1047,7 +1058,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         shell.name = "Firework Rocket";
         shell.transform.position = launcherPosition;
         shell.transform.localScale = Vector3.one * 0.28f;
-        shell.GetComponent<Renderer>().material = MakeEmissionMaterial(color, 2.2f);
+        var shellMaterial = MakeEmissionMaterial(color, 2.2f);
+        if (shellMaterial != null)
+        {
+            shell.GetComponent<Renderer>().material = shellMaterial;
+        }
         Destroy(shell.GetComponent<Collider>());
 
         var light = shell.AddComponent<Light>();
@@ -1102,7 +1117,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         shape.rotation = new Vector3(-90f, 0f, 0f);
 
         var renderer = particles.GetComponent<ParticleSystemRenderer>();
-        renderer.material = MakeParticleMaterial(color);
+        var particleMaterial = MakeParticleMaterial(color);
+        if (particleMaterial != null)
+        {
+            renderer.material = particleMaterial;
+        }
         renderer.renderMode = ParticleSystemRenderMode.Billboard;
 
         flashObject.AddComponent<LaunchFlashCleanup>().Initialize(light, 0.42f);
@@ -1245,7 +1264,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         colorOverLifetime.color = gradient;
 
         var renderer = particles.GetComponent<ParticleSystemRenderer>();
-        renderer.material = MakeParticleMaterial(color);
+        var particleMaterial = MakeParticleMaterial(color);
+        if (particleMaterial != null)
+        {
+            renderer.material = particleMaterial;
+        }
         renderer.renderMode = ParticleSystemRenderMode.Billboard;
 
         var flash = explosionObject.AddComponent<Light>();
@@ -1300,13 +1323,15 @@ public sealed class FireworksSceneController : MonoBehaviour
         return button;
     }
 
-    private static Material MakeStandardMaterial(Color color, float metallic, float smoothness)
+    private void AssignSharedMaterial(Renderer targetRenderer, Material material, string materialName)
     {
-        var material = new Material(Shader.Find("Standard"));
-        material.color = color;
-        material.SetFloat("_Metallic", metallic);
-        material.SetFloat("_Glossiness", smoothness);
-        return material;
+        if (material == null)
+        {
+            LogMissingMaterialOnce(materialName);
+            return;
+        }
+
+        targetRenderer.sharedMaterial = material;
     }
 
     private static Color GetFireworkColor(FireworkColor color)
@@ -1344,18 +1369,30 @@ public sealed class FireworksSceneController : MonoBehaviour
         return (FireworkColor)Random.Range(0, 4);
     }
 
-    private static Material MakeEmissionMaterial(Color color, float intensity)
+    private Material MakeEmissionMaterial(Color color, float intensity)
     {
-        var material = new Material(Shader.Find("Standard"));
+        if (starEmissionMaterial == null)
+        {
+            LogMissingMaterialOnce("Star Emission Material");
+            return null;
+        }
+
+        var material = new Material(starEmissionMaterial);
         material.color = color;
         material.EnableKeyword("_EMISSION");
         material.SetColor("_EmissionColor", color * intensity);
         return material;
     }
 
-    private static Material MakeParticleMaterial(Color color)
+    private Material MakeParticleMaterial(Color color)
     {
-        var material = new Material(Shader.Find("Particles/Standard Unlit"));
+        if (fireworkParticleMaterial == null)
+        {
+            LogMissingMaterialOnce("Firework Particle Material");
+            return null;
+        }
+
+        var material = new Material(fireworkParticleMaterial);
         material.SetColor("_Color", color);
         material.SetFloat("_Mode", 2f);
         material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
@@ -1364,6 +1401,14 @@ public sealed class FireworksSceneController : MonoBehaviour
         material.EnableKeyword("_ALPHABLEND_ON");
         material.renderQueue = 3000;
         return material;
+    }
+
+    private void LogMissingMaterialOnce(string materialName)
+    {
+        if (missingMaterialWarnings.Add(materialName))
+        {
+            Debug.LogError(materialName + " is not assigned.");
+        }
     }
 
     private static void EnsureEventSystem()

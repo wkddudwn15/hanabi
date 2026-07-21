@@ -129,6 +129,11 @@ MonoBehaviour:
   resultSound: {fileID: 8300000, guid: ae575f36e9fb42db86c0ee2307b507a6, type: 3}
   countdownSound: {fileID: 8300000, guid: b4498686b68646a68df23ddffed58053, type: 3}
   startSound: {fileID: 8300000, guid: 6468491b2f43434fac8593f2f62f3402, type: 3}
+  groundMaterial: {fileID: 2100000, guid: b1fcec49675d48d78a1024a60c735815, type: 2}
+  launcherBaseMaterial: {fileID: 2100000, guid: 662beff240a344249036cdcd47ce58f5, type: 2}
+  launcherTubeMaterial: {fileID: 2100000, guid: 7b3e5dcaa6fc4c09adf82972ec8ee1b4, type: 2}
+  starEmissionMaterial: {fileID: 2100000, guid: c797162a26f24b078b80bbe5e13a8916, type: 2}
+  fireworkParticleMaterial: {fileID: 2100000, guid: f59086abe00f4cdf9458d95ae7e6b6e1, type: 2}
 --- !u!82 &200003
 AudioSource:
   m_ObjectHideFlags: 0

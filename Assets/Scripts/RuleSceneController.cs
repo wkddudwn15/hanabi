@@ -6,6 +6,10 @@ public sealed class RuleSceneController : MonoBehaviour
 {
     private static readonly Color Night = new Color(0.01f, 0.015f, 0.035f);
 
+    [SerializeField] private Material groundMaterial;
+    [SerializeField] private Material launcherBaseMaterial;
+    [SerializeField] private Material launcherTubeMaterial;
+
     private void Start()
     {
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
@@ -41,25 +45,25 @@ public sealed class RuleSceneController : MonoBehaviour
         fill.transform.position = new Vector3(0f, 2.2f, -1.6f);
     }
 
-    private static void CreatePreviewLauncher()
+    private void CreatePreviewLauncher()
     {
         var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
         ground.name = "Ground";
         ground.transform.localScale = new Vector3(4f, 1f, 4f);
-        ground.GetComponent<Renderer>().material = MakeMaterial(new Color(0.06f, 0.08f, 0.12f), 0.08f);
+        AssignSharedMaterial(ground.GetComponent<Renderer>(), groundMaterial, "Ground Material");
 
         var baseObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         baseObject.name = "Launcher Base";
         baseObject.transform.position = new Vector3(0f, 0.18f, 0f);
         baseObject.transform.localScale = new Vector3(1.8f, 0.36f, 1.8f);
-        baseObject.GetComponent<Renderer>().material = MakeMaterial(new Color(0.23f, 0.27f, 0.34f), 0.35f);
+        AssignSharedMaterial(baseObject.GetComponent<Renderer>(), launcherBaseMaterial, "Launcher Base Material");
 
         var tube = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         tube.name = "Launcher Tube";
         tube.transform.position = new Vector3(0f, 1.25f, 0f);
         tube.transform.rotation = Quaternion.Euler(0f, 0f, -8f);
         tube.transform.localScale = new Vector3(0.42f, 1.45f, 0.42f);
-        tube.GetComponent<Renderer>().material = MakeMaterial(new Color(0.46f, 0.54f, 0.64f), 0.45f);
+        AssignSharedMaterial(tube.GetComponent<Renderer>(), launcherTubeMaterial, "Launcher Tube Material");
     }
 
     private static void CreateCanvas()
@@ -200,13 +204,15 @@ public sealed class RuleSceneController : MonoBehaviour
         return button;
     }
 
-    private static Material MakeMaterial(Color color, float metallic)
+    private static void AssignSharedMaterial(Renderer targetRenderer, Material material, string materialName)
     {
-        var material = new Material(Shader.Find("Standard"));
-        material.color = color;
-        material.SetFloat("_Metallic", metallic);
-        material.SetFloat("_Glossiness", 0.28f);
-        return material;
+        if (material == null)
+        {
+            Debug.LogError(materialName + " is not assigned.");
+            return;
+        }
+
+        targetRenderer.sharedMaterial = material;
     }
 
     private static void EnsureEventSystem()

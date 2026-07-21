@@ -147,3 +147,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8a1a45846b74862b7f8f1a35702ad5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  groundMaterial: {fileID: 2100000, guid: b1fcec49675d48d78a1024a60c735815, type: 2}
+  launcherBaseMaterial: {fileID: 2100000, guid: 662beff240a344249036cdcd47ce58f5, type: 2}
+  launcherTubeMaterial: {fileID: 2100000, guid: 7b3e5dcaa6fc4c09adf82972ec8ee1b4, type: 2}
