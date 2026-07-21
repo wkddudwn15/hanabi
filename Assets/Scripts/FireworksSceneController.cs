@@ -88,6 +88,16 @@ public sealed class FireworksSceneController : MonoBehaviour
         UpdateHud();
     }
 
+    private void OnGUI()
+    {
+        if (!resultShown)
+        {
+            return;
+        }
+
+        DrawResultRankValue();
+    }
+
     private void CreateCamera()
     {
         cameraRig = new GameObject("Camera Orbit Rig").transform;
@@ -431,6 +441,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         var finalRank = GetRank(finalScore);
+        Debug.Log($"Final Rank: {finalRank}");
         if (finalRankText != null)
         {
             finalRankText.text = finalRank;
@@ -452,6 +463,51 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         PlaySound(resultSound);
+    }
+
+    private void DrawResultRankValue()
+    {
+        var previousMatrix = GUI.matrix;
+        GUI.matrix = Matrix4x4.identity;
+        var finalRank = GetRank(score);
+
+        var scaleX = Screen.width / 1280f;
+        var scaleY = Screen.height / 720f;
+        var panelWidth = 430f * scaleX;
+        var panelHeight = 500f * scaleY;
+        var resultPanelRect = new Rect(
+            (Screen.width - panelWidth) * 0.5f,
+            (Screen.height - panelHeight) * 0.5f,
+            panelWidth,
+            panelHeight
+        );
+        var rankValueRect = new Rect(
+            resultPanelRect.x + (20f * scaleX),
+            resultPanelRect.y + (305f * scaleY),
+            resultPanelRect.width - (40f * scaleX),
+            92f * scaleY
+        );
+
+        var rankValueStyle = new GUIStyle(GUI.skin.label);
+        rankValueStyle.alignment = TextAnchor.MiddleCenter;
+        rankValueStyle.fontSize = Mathf.Max(48, Mathf.RoundToInt((finalRank == "S" ? 92f : 82f) * Mathf.Min(scaleX, scaleY)));
+        rankValueStyle.fontStyle = FontStyle.Bold;
+        rankValueStyle.normal.textColor = Color.white;
+
+        if (finalRank == "S")
+        {
+            var outlineStyle = new GUIStyle(rankValueStyle);
+            outlineStyle.normal.textColor = new Color(0.02f, 0.02f, 0.02f, 0.92f);
+            var offset = Mathf.Max(2f, 4f * Mathf.Min(scaleX, scaleY));
+            GUI.Label(new Rect(rankValueRect.x - offset, rankValueRect.y, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
+            GUI.Label(new Rect(rankValueRect.x + offset, rankValueRect.y, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
+            GUI.Label(new Rect(rankValueRect.x, rankValueRect.y - offset, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
+            GUI.Label(new Rect(rankValueRect.x, rankValueRect.y + offset, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
+        }
+
+        rankValueStyle.normal.textColor = Color.white;
+        GUI.Label(rankValueRect, finalRank, rankValueStyle);
+        GUI.matrix = previousMatrix;
     }
 
     private string GetRank(int finalScore)
