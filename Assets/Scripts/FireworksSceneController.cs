@@ -13,10 +13,14 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Transform cameraRig;
     private Text timeText;
     private Text scoreText;
+    private Text selectedColorText;
+    private Text selectedColorNameText;
+    private Text colorControlsText;
     private Vector3 launcherPosition = new Vector3(0f, 1.15f, 0f);
     private Vector2 pointerDownPosition;
     private Vector2 lastPointerPosition;
     private bool pointerStartedOverUi;
+    private FireworkColor selectedColor = FireworkColor.Red;
     private float remainingTime = GameDurationSeconds;
     private float yaw;
     private float pitch = 18f;
@@ -35,6 +39,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private void Update()
     {
         UpdateTimer();
+        HandleColorInput();
         HandleCameraInput();
         HandleLaunchInput();
         UpdateRockets();
@@ -123,6 +128,9 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateText(canvasObject.transform, "クリック: 花火発射 / ドラッグ: カメラ回転 / ホイール: ズーム", 18, FontStyle.Normal, new Vector2(18f, 18f), new Vector2(620f, 32f), TextAnchor.LowerLeft, new Vector2(0f, 0f));
         timeText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -18f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         scoreText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -58f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        selectedColorText = CreateText(canvasObject.transform, "選択中：", 24, FontStyle.Bold, new Vector2(18f, -104f), new Vector2(116f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        selectedColorNameText = CreateText(canvasObject.transform, string.Empty, 24, FontStyle.Bold, new Vector2(134f, -104f), new Vector2(92f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        colorControlsText = CreateText(canvasObject.transform, "A 赤 / S 青 / D 黄 / F 緑", 18, FontStyle.Normal, new Vector2(18f, -136f), new Vector2(360f, 32f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         UpdateHud();
 
         CreateButton(canvasObject.transform, "Title", new Vector2(-184f, -30f), new Vector2(132f, 42f), () => SceneManager.LoadScene("TitleScene"));
@@ -150,6 +158,48 @@ public sealed class FireworksSceneController : MonoBehaviour
         {
             scoreText.text = "Score: " + score.ToString();
         }
+
+        if (selectedColorText != null)
+        {
+            selectedColorText.text = "選択中：";
+        }
+
+        if (selectedColorNameText != null)
+        {
+            selectedColorNameText.text = GetColorName(selectedColor);
+            selectedColorNameText.color = GetFireworkColor(selectedColor);
+        }
+
+        if (colorControlsText != null)
+        {
+            colorControlsText.text = "A 赤 / S 青 / D 黄 / F 緑";
+        }
+    }
+
+    private void HandleColorInput()
+    {
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            SelectFireworkColor(FireworkColor.Red);
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            SelectFireworkColor(FireworkColor.Blue);
+        }
+        else if (Input.GetKeyDown(KeyCode.D))
+        {
+            SelectFireworkColor(FireworkColor.Yellow);
+        }
+        else if (Input.GetKeyDown(KeyCode.F))
+        {
+            SelectFireworkColor(FireworkColor.Green);
+        }
+    }
+
+    private void SelectFireworkColor(FireworkColor color)
+    {
+        selectedColor = color;
+        UpdateHud();
     }
 
     private void HandleLaunchInput()
@@ -210,7 +260,7 @@ public sealed class FireworksSceneController : MonoBehaviour
             return;
         }
 
-        var color = Color.HSVToRGB(Random.value, 0.92f, 1f);
+        var color = GetFireworkColor(selectedColor);
         var shell = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         shell.name = "Firework Rocket";
         shell.transform.position = launcherPosition;
@@ -367,6 +417,36 @@ public sealed class FireworksSceneController : MonoBehaviour
         return material;
     }
 
+    private static Color GetFireworkColor(FireworkColor color)
+    {
+        switch (color)
+        {
+            case FireworkColor.Blue:
+                return new Color(0.20f, 0.48f, 1f);
+            case FireworkColor.Yellow:
+                return new Color(1f, 0.88f, 0.18f);
+            case FireworkColor.Green:
+                return new Color(0.20f, 0.95f, 0.36f);
+            default:
+                return new Color(1f, 0.18f, 0.16f);
+        }
+    }
+
+    private static string GetColorName(FireworkColor color)
+    {
+        switch (color)
+        {
+            case FireworkColor.Blue:
+                return "青";
+            case FireworkColor.Yellow:
+                return "黄";
+            case FireworkColor.Green:
+                return "緑";
+            default:
+                return "赤";
+        }
+    }
+
     private static Material MakeEmissionMaterial(Color color, float intensity)
     {
         var material = new Material(Shader.Find("Standard"));
@@ -416,6 +496,14 @@ public sealed class FireworksSceneController : MonoBehaviour
         public Vector3 Velocity;
         public Color Color;
         public float Fuse;
+    }
+
+    private enum FireworkColor
+    {
+        Red,
+        Blue,
+        Yellow,
+        Green
     }
 
     private sealed class ExplosionCleanup : MonoBehaviour
