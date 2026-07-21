@@ -26,10 +26,15 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Text resultText;
     private Text selectedColorText;
     private Text selectedColorNameText;
+    private GameObject resultOverlayObject;
+    private Text finalScoreText;
+    private Text finalMaxComboText;
+    private Text finalRankText;
     private Vector3 launcherPosition = new Vector3(0f, 1.15f, 0f);
     private Vector2 pointerDownPosition;
     private Vector2 lastPointerPosition;
     private bool pointerStartedOverUi;
+    private bool resultShown;
     private FireworkColor selectedColor = FireworkColor.Red;
     private float targetStartedAt;
     private float resultDisplayTime;
@@ -55,6 +60,13 @@ public sealed class FireworksSceneController : MonoBehaviour
     {
         UpdateTimer();
         UpdateResultDisplay();
+
+        if (resultShown)
+        {
+            UpdateHud();
+            return;
+        }
+
         HandleColorInput();
         HandleCameraInput();
         HandleLaunchInput();
@@ -152,6 +164,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         selectedColorText = CreateText(canvasObject.transform, "装填中：", 24, FontStyle.Bold, new Vector2(18f, -144f), new Vector2(116f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         selectedColorNameText = CreateText(canvasObject.transform, string.Empty, 24, FontStyle.Bold, new Vector2(134f, -144f), new Vector2(92f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         CreateColorControlUi(canvasObject.transform);
+        CreateResultUi(canvasObject.transform);
         UpdateHud();
 
         CreateButton(canvasObject.transform, "Title", new Vector2(-184f, -30f), new Vector2(132f, 42f), () => SceneManager.LoadScene("TitleScene"));
@@ -299,14 +312,160 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
     }
 
-    private void UpdateTimer()
+    private void CreateResultUi(Transform parent)
     {
-        if (remainingTime <= 0f)
+        resultOverlayObject = new GameObject("Result Overlay");
+        resultOverlayObject.transform.SetParent(parent, false);
+
+        var overlayRect = resultOverlayObject.AddComponent<RectTransform>();
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.pivot = new Vector2(0.5f, 0.5f);
+        overlayRect.anchoredPosition = Vector2.zero;
+        overlayRect.sizeDelta = Vector2.zero;
+
+        var overlayImage = resultOverlayObject.AddComponent<Image>();
+        overlayImage.color = new Color(0f, 0f, 0f, 0.68f);
+        overlayImage.raycastTarget = true;
+
+        var panelObject = new GameObject("Result Panel");
+        panelObject.transform.SetParent(resultOverlayObject.transform, false);
+        var panelRect = panelObject.AddComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.anchoredPosition = Vector2.zero;
+        panelRect.sizeDelta = new Vector2(430f, 500f);
+
+        var panelImage = panelObject.AddComponent<Image>();
+        panelImage.color = new Color(0.08f, 0.10f, 0.16f, 0.98f);
+        var panelOutline = panelObject.AddComponent<Outline>();
+        panelOutline.effectColor = new Color(0.82f, 0.88f, 1f, 0.62f);
+        panelOutline.effectDistance = new Vector2(3f, -3f);
+
+        CreateText(panelObject.transform, "TIME UP", 42, FontStyle.Bold, new Vector2(0f, 198f), new Vector2(330f, 58f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        CreateText(panelObject.transform, "SCORE", 20, FontStyle.Bold, new Vector2(0f, 116f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalScoreText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, 76f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        CreateText(panelObject.transform, "MAX COMBO", 20, FontStyle.Bold, new Vector2(0f, 12f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalMaxComboText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, -28f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        CreateText(panelObject.transform, "RANK", 20, FontStyle.Bold, new Vector2(0f, -92f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalRankText = CreateText(panelObject.transform, "C", 46, FontStyle.Bold, new Vector2(0f, -138f), new Vector2(220f, 56f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalRankText.color = new Color(1f, 0.95f, 0.42f, 1f);
+
+        CreateResultButton(panelObject.transform, "RETRY", new Vector2(-92f, -212f), new Vector2(150f, 46f), RestartGame);
+        CreateResultButton(panelObject.transform, "TITLE", new Vector2(92f, -212f), new Vector2(150f, 46f), ReturnToTitle);
+
+        resultOverlayObject.SetActive(false);
+    }
+
+    private Button CreateResultButton(Transform parent, string label, Vector2 position, Vector2 dimensions, UnityEngine.Events.UnityAction action)
+    {
+        var buttonObject = new GameObject(label + " Button");
+        buttonObject.transform.SetParent(parent, false);
+        var rect = buttonObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = dimensions;
+
+        var image = buttonObject.AddComponent<Image>();
+        image.color = new Color(0.18f, 0.23f, 0.34f, 1f);
+        var outline = buttonObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.80f, 0.88f, 1f, 0.70f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        var button = buttonObject.AddComponent<Button>();
+        button.targetGraphic = image;
+        button.onClick.AddListener(action);
+        CreateText(buttonObject.transform, label, 18, FontStyle.Bold, Vector2.zero, dimensions, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        return button;
+    }
+
+    private void ShowGameResult()
+    {
+        if (resultShown)
         {
             return;
         }
 
+        resultShown = true;
+        remainingTime = 0f;
+        resultDisplayTime = 0f;
+        if (resultText != null)
+        {
+            resultText.text = string.Empty;
+        }
+
+        if (finalScoreText != null)
+        {
+            finalScoreText.text = score.ToString();
+        }
+
+        if (finalMaxComboText != null)
+        {
+            finalMaxComboText.text = maxCombo.ToString();
+        }
+
+        if (finalRankText != null)
+        {
+            finalRankText.text = GetRank(score);
+        }
+
+        if (resultOverlayObject != null)
+        {
+            resultOverlayObject.transform.SetAsLastSibling();
+            resultOverlayObject.SetActive(true);
+        }
+    }
+
+    private string GetRank(int finalScore)
+    {
+        if (finalScore >= 60)
+        {
+            return "S";
+        }
+
+        if (finalScore >= 40)
+        {
+            return "A";
+        }
+
+        if (finalScore >= 20)
+        {
+            return "B";
+        }
+
+        return "C";
+    }
+
+    private void RestartGame()
+    {
+        SceneManager.LoadScene("GameScene");
+    }
+
+    private void ReturnToTitle()
+    {
+        SceneManager.LoadScene("TitleScene");
+    }
+
+    private void UpdateTimer()
+    {
+        if (remainingTime <= 0f)
+        {
+            if (!resultShown)
+            {
+                ShowGameResult();
+            }
+
+            return;
+        }
+
         remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
+        if (remainingTime <= 0f)
+        {
+            ShowGameResult();
+        }
     }
 
     private void UpdateHud()
