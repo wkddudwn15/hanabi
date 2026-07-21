@@ -8,6 +8,10 @@ public sealed class FireworksSceneController : MonoBehaviour
 {
     private const float GameDurationSeconds = 30f;
     private const float ResultDisplaySeconds = 0.75f;
+    private const float PerfectStart = 0.30f;
+    private const float PerfectEnd = 0.80f;
+    private const float GoodEnd = 1.30f;
+    private const float MissTimeout = 1.80f;
 
     private readonly List<Rocket> rockets = new List<Rocket>();
     private Camera mainCamera;
@@ -26,6 +30,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private bool pointerStartedOverUi;
     private FireworkColor selectedColor = FireworkColor.Red;
     private FireworkColor targetColor;
+    private float targetStartedAt;
     private float resultDisplayTime;
     private float remainingTime = GameDurationSeconds;
     private float yaw;
@@ -50,6 +55,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         HandleColorInput();
         HandleCameraInput();
         HandleLaunchInput();
+        UpdateTargetTimeout();
         UpdateRockets();
         UpdateHud();
     }
@@ -232,7 +238,22 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         targetColor = (FireworkColor)Random.Range(0, 4);
+        targetStartedAt = Time.time;
         UpdateHud();
+    }
+
+    private void UpdateTargetTimeout()
+    {
+        if (remainingTime <= 0f)
+        {
+            return;
+        }
+
+        if (Time.time - targetStartedAt >= MissTimeout)
+        {
+            ShowJudgment(JudgmentResult.Miss);
+            SelectNextTargetColor();
+        }
     }
 
     private void UpdateResultDisplay()
@@ -320,16 +341,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         var color = GetFireworkColor(selectedColor);
-        var matchedTarget = selectedColor == targetColor;
-        if (matchedTarget)
-        {
-            score += 3;
-            ShowResult("正解！", new Color(0.85f, 1f, 0.45f));
-        }
-        else
-        {
-            ShowResult("不正解", new Color(1f, 0.46f, 0.38f));
-        }
+        ShowJudgment(GetJudgmentResult());
 
         var shell = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         shell.name = "Firework Rocket";
@@ -354,6 +366,45 @@ public sealed class FireworksSceneController : MonoBehaviour
 
         SelectNextTargetColor();
         UpdateHud();
+    }
+
+    private JudgmentResult GetJudgmentResult()
+    {
+        if (selectedColor != targetColor)
+        {
+            return JudgmentResult.Miss;
+        }
+
+        var elapsed = Time.time - targetStartedAt;
+        if (elapsed >= PerfectStart && elapsed <= PerfectEnd)
+        {
+            return JudgmentResult.Perfect;
+        }
+
+        if (elapsed > PerfectEnd && elapsed <= GoodEnd)
+        {
+            return JudgmentResult.Good;
+        }
+
+        return JudgmentResult.Miss;
+    }
+
+    private void ShowJudgment(JudgmentResult result)
+    {
+        switch (result)
+        {
+            case JudgmentResult.Perfect:
+                score += 3;
+                ShowResult("PERFECT", new Color(0.85f, 1f, 0.45f));
+                break;
+            case JudgmentResult.Good:
+                score += 2;
+                ShowResult("GOOD", new Color(0.45f, 0.78f, 1f));
+                break;
+            default:
+                ShowResult("MISS", new Color(1f, 0.46f, 0.38f));
+                break;
+        }
     }
 
     private void UpdateRockets()
@@ -574,6 +625,13 @@ public sealed class FireworksSceneController : MonoBehaviour
         Blue,
         Yellow,
         Green
+    }
+
+    private enum JudgmentResult
+    {
+        Perfect,
+        Good,
+        Miss
     }
 
     private sealed class ExplosionCleanup : MonoBehaviour
