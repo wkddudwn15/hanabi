@@ -363,7 +363,8 @@ public sealed class FireworksSceneController : MonoBehaviour
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
         panelRect.anchoredPosition = Vector2.zero;
-        panelRect.sizeDelta = new Vector2(430f, 500f);
+        var panelDimensions = new Vector2(430f, 430f);
+        panelRect.sizeDelta = panelDimensions;
 
         var panelImage = panelObject.AddComponent<Image>();
         panelImage.color = new Color(0.08f, 0.10f, 0.16f, 0.98f);
@@ -371,21 +372,32 @@ public sealed class FireworksSceneController : MonoBehaviour
         panelOutline.effectColor = new Color(0.82f, 0.88f, 1f, 0.62f);
         panelOutline.effectDistance = new Vector2(3f, -3f);
 
-        CreateText(panelObject.transform, "TIME UP", 42, FontStyle.Bold, new Vector2(0f, 198f), new Vector2(330f, 58f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        CreateText(panelObject.transform, "SCORE", 20, FontStyle.Bold, new Vector2(0f, 116f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        finalScoreText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, 76f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        CreateText(panelObject.transform, "MAX COMBO", 20, FontStyle.Bold, new Vector2(0f, 12f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        finalMaxComboText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, -28f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        CreateText(panelObject.transform, "RANK", 20, FontStyle.Bold, new Vector2(0f, -72f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        finalRankText = CreateText(panelObject.transform, "C", 82, FontStyle.Bold, new Vector2(0f, -132f), new Vector2(260f, 96f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        var currentY = 28f;
+        CreateText(panelObject.transform, "TIME UP", 30, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 40f)), new Vector2(330f, 40f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        currentY += 62f;
+        CreateText(panelObject.transform, "SCORE", 14, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 18f)), new Vector2(220f, 18f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        currentY += 20f;
+        finalScoreText = CreateText(panelObject.transform, "0", 25, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 34f)), new Vector2(220f, 34f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        currentY += 44f;
+        CreateText(panelObject.transform, "MAX COMBO", 14, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 18f)), new Vector2(220f, 18f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        currentY += 20f;
+        finalMaxComboText = CreateText(panelObject.transform, "0", 25, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 34f)), new Vector2(220f, 34f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        currentY += 44f;
+        CreateText(panelObject.transform, "RANK", 14, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 18f)), new Vector2(220f, 18f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        currentY += 20f;
+        finalRankText = CreateText(panelObject.transform, "C", 40, FontStyle.Bold, new Vector2(0f, GetPanelAnchoredY(panelDimensions.y, currentY, 54f)), new Vector2(260f, 54f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         finalRankText.color = Color.white;
         finalRankText.raycastTarget = false;
+        finalRankText.enabled = false;
         finalRankOutline = finalRankText.gameObject.AddComponent<Outline>();
+        finalRankOutline.enabled = false;
         finalRankOutline.effectColor = new Color(0f, 0f, 0f, 0.45f);
         finalRankOutline.effectDistance = new Vector2(2f, -2f);
+        currentY += 72f;
+        var buttonY = GetPanelAnchoredY(panelDimensions.y, currentY, 46f);
 
-        CreateResultButton(panelObject.transform, "RETRY", new Vector2(-92f, -212f), new Vector2(150f, 46f), RestartGame);
-        CreateResultButton(panelObject.transform, "TITLE", new Vector2(92f, -212f), new Vector2(150f, 46f), ReturnToTitle);
+        CreateResultButton(panelObject.transform, "RETRY", new Vector2(-92f, buttonY), new Vector2(150f, 46f), RestartGame);
+        CreateResultButton(panelObject.transform, "TITLE", new Vector2(92f, buttonY), new Vector2(150f, 46f), ReturnToTitle);
 
         resultOverlayObject.SetActive(false);
     }
@@ -412,6 +424,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         button.onClick.AddListener(action);
         CreateText(buttonObject.transform, label, 18, FontStyle.Bold, Vector2.zero, dimensions, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         return button;
+    }
+
+    private static float GetPanelAnchoredY(float panelHeight, float top, float height)
+    {
+        return (panelHeight * 0.5f) - top - (height * 0.5f);
     }
 
     private void ShowGameResult()
@@ -445,15 +462,14 @@ public sealed class FireworksSceneController : MonoBehaviour
         if (finalRankText != null)
         {
             finalRankText.text = finalRank;
-            finalRankText.fontSize = finalRank == "S" ? 92 : 82;
+            finalRankText.fontSize = 40;
             finalRankText.color = Color.white;
-            finalRankText.transform.SetAsLastSibling();
+            finalRankText.enabled = false;
         }
 
         if (finalRankOutline != null)
         {
-            finalRankOutline.effectColor = finalRank == "S" ? new Color(1f, 0.52f, 0.10f, 0.82f) : new Color(0f, 0f, 0f, 0.65f);
-            finalRankOutline.effectDistance = finalRank == "S" ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
+            finalRankOutline.enabled = false;
         }
 
         if (resultOverlayObject != null)
@@ -474,23 +490,30 @@ public sealed class FireworksSceneController : MonoBehaviour
         var scaleX = Screen.width / 1280f;
         var scaleY = Screen.height / 720f;
         var panelWidth = 430f * scaleX;
-        var panelHeight = 500f * scaleY;
+        var panelHeight = 430f * scaleY;
         var resultPanelRect = new Rect(
             (Screen.width - panelWidth) * 0.5f,
             (Screen.height - panelHeight) * 0.5f,
             panelWidth,
             panelHeight
         );
+        var currentY = 28f * scaleY;
+        currentY += 62f * scaleY;
+        currentY += 20f * scaleY;
+        currentY += 44f * scaleY;
+        currentY += 20f * scaleY;
+        currentY += 44f * scaleY;
+        currentY += 20f * scaleY;
         var rankValueRect = new Rect(
             resultPanelRect.x + (20f * scaleX),
-            resultPanelRect.y + (305f * scaleY),
+            resultPanelRect.y + currentY,
             resultPanelRect.width - (40f * scaleX),
-            92f * scaleY
+            54f * scaleY
         );
 
         var rankValueStyle = new GUIStyle(GUI.skin.label);
         rankValueStyle.alignment = TextAnchor.MiddleCenter;
-        rankValueStyle.fontSize = Mathf.Max(48, Mathf.RoundToInt((finalRank == "S" ? 92f : 82f) * Mathf.Min(scaleX, scaleY)));
+        rankValueStyle.fontSize = Mathf.Max(34, Mathf.RoundToInt(40f * Mathf.Min(scaleX, scaleY)));
         rankValueStyle.fontStyle = FontStyle.Bold;
         rankValueStyle.normal.textColor = Color.white;
 
@@ -498,7 +521,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         {
             var outlineStyle = new GUIStyle(rankValueStyle);
             outlineStyle.normal.textColor = new Color(0.02f, 0.02f, 0.02f, 0.92f);
-            var offset = Mathf.Max(2f, 4f * Mathf.Min(scaleX, scaleY));
+            var offset = Mathf.Max(1f, 2f * Mathf.Min(scaleX, scaleY));
             GUI.Label(new Rect(rankValueRect.x - offset, rankValueRect.y, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
             GUI.Label(new Rect(rankValueRect.x + offset, rankValueRect.y, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
             GUI.Label(new Rect(rankValueRect.x, rankValueRect.y - offset, rankValueRect.width, rankValueRect.height), finalRank, outlineStyle);
