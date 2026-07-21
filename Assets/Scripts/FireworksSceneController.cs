@@ -8,29 +8,29 @@ public sealed class FireworksSceneController : MonoBehaviour
 {
     private const float GameDurationSeconds = 30f;
     private const float ResultDisplaySeconds = 0.75f;
-    private const float PerfectStart = 0.30f;
-    private const float PerfectEnd = 0.80f;
-    private const float GoodEnd = 1.30f;
-    private const float MissTimeout = 1.80f;
+    private const int TargetQueueSize = 5;
+    private const float PerfectStart = 0.25f;
+    private const float PerfectEnd = 1.00f;
+    private const float GoodEnd = 1.60f;
+    private const float MissTimeout = 2.20f;
 
     private readonly List<Rocket> rockets = new List<Rocket>();
+    private readonly List<FireworkColor> targetQueue = new List<FireworkColor>();
+    private readonly List<TargetSlotUi> targetSlotUis = new List<TargetSlotUi>();
+    private readonly List<ColorControlUi> colorControlUis = new List<ColorControlUi>();
     private Camera mainCamera;
     private Transform cameraRig;
     private Text timeText;
     private Text scoreText;
     private Text comboText;
-    private Text targetColorText;
-    private Text targetColorNameText;
     private Text resultText;
     private Text selectedColorText;
     private Text selectedColorNameText;
-    private Text colorControlsText;
     private Vector3 launcherPosition = new Vector3(0f, 1.15f, 0f);
     private Vector2 pointerDownPosition;
     private Vector2 lastPointerPosition;
     private bool pointerStartedOverUi;
     private FireworkColor selectedColor = FireworkColor.Red;
-    private FireworkColor targetColor;
     private float targetStartedAt;
     private float resultDisplayTime;
     private float remainingTime = GameDurationSeconds;
@@ -48,7 +48,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateLighting();
         CreateWorld();
         CreateUi();
-        SelectNextTargetColor();
+        InitializeTargetQueue();
     }
 
     private void Update()
@@ -143,19 +143,160 @@ public sealed class FireworksSceneController : MonoBehaviour
         EnsureEventSystem();
 
         CreateText(canvasObject.transform, "クリック: 花火発射 / ドラッグ: カメラ回転 / ホイール: ズーム", 18, FontStyle.Normal, new Vector2(18f, 18f), new Vector2(620f, 32f), TextAnchor.LowerLeft, new Vector2(0f, 0f));
-        targetColorText = CreateText(canvasObject.transform, "お題：", 30, FontStyle.Bold, new Vector2(-56f, -18f), new Vector2(112f, 42f), TextAnchor.UpperRight, new Vector2(0.5f, 1f));
-        targetColorNameText = CreateText(canvasObject.transform, string.Empty, 30, FontStyle.Bold, new Vector2(56f, -18f), new Vector2(112f, 42f), TextAnchor.UpperLeft, new Vector2(0.5f, 1f));
+        CreateText(canvasObject.transform, "打ち上げ予定", 24, FontStyle.Bold, new Vector2(0f, -14f), new Vector2(260f, 32f), TextAnchor.UpperCenter, new Vector2(0.5f, 1f));
+        CreateTargetQueueUi(canvasObject.transform);
         resultText = CreateText(canvasObject.transform, string.Empty, 42, FontStyle.Bold, new Vector2(0f, 72f), new Vector2(360f, 70f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         timeText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -18f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         scoreText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -58f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         comboText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -98f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
-        selectedColorText = CreateText(canvasObject.transform, "選択中：", 24, FontStyle.Bold, new Vector2(18f, -144f), new Vector2(116f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        selectedColorText = CreateText(canvasObject.transform, "装填中：", 24, FontStyle.Bold, new Vector2(18f, -144f), new Vector2(116f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         selectedColorNameText = CreateText(canvasObject.transform, string.Empty, 24, FontStyle.Bold, new Vector2(134f, -144f), new Vector2(92f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
-        colorControlsText = CreateText(canvasObject.transform, "A 赤 / S 青 / D 黄 / F 緑", 18, FontStyle.Normal, new Vector2(18f, -176f), new Vector2(360f, 32f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        CreateColorControlUi(canvasObject.transform);
         UpdateHud();
 
         CreateButton(canvasObject.transform, "Title", new Vector2(-184f, -30f), new Vector2(132f, 42f), () => SceneManager.LoadScene("TitleScene"));
         CreateButton(canvasObject.transform, "Quit", new Vector2(-40f, -30f), new Vector2(112f, 42f), QuitApplication);
+    }
+
+    private void CreateTargetQueueUi(Transform parent)
+    {
+        targetSlotUis.Clear();
+        var positions = new[]
+        {
+            new Vector2(-254f, -66f),
+            new Vector2(-104f, -74f),
+            new Vector2(22f, -74f),
+            new Vector2(148f, -74f),
+            new Vector2(274f, -74f)
+        };
+
+        for (var i = 0; i < TargetQueueSize; i++)
+        {
+            var isCurrent = i == 0;
+            var slot = CreateTargetSlot(parent, "Target Slot " + i.ToString(), positions[i], isCurrent);
+            targetSlotUis.Add(slot);
+
+            if (i < TargetQueueSize - 1)
+            {
+                var arrowX = i == 0 ? -170f : -42f + ((i - 1) * 126f);
+                CreateText(parent, "→", 24, FontStyle.Bold, new Vector2(arrowX, -88f), new Vector2(28f, 30f), TextAnchor.MiddleCenter, new Vector2(0.5f, 1f));
+            }
+        }
+    }
+
+    private TargetSlotUi CreateTargetSlot(Transform parent, string name, Vector2 position, bool isCurrent)
+    {
+        var dimensions = isCurrent ? new Vector2(126f, 76f) : new Vector2(96f, 58f);
+        var slotObject = new GameObject(name);
+        slotObject.transform.SetParent(parent, false);
+
+        var rect = slotObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = dimensions;
+
+        var image = slotObject.AddComponent<Image>();
+        image.color = new Color(0.10f, 0.12f, 0.18f, 0.86f);
+
+        var outline = slotObject.AddComponent<Outline>();
+        outline.effectColor = isCurrent ? new Color(1f, 0.95f, 0.58f, 1f) : new Color(0.78f, 0.84f, 1f, 0.42f);
+        outline.effectDistance = isCurrent ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
+
+        var swatchSize = isCurrent ? new Vector2(34f, 34f) : new Vector2(24f, 24f);
+        var swatchObject = new GameObject(name + " Swatch");
+        swatchObject.transform.SetParent(slotObject.transform, false);
+        var swatchRect = swatchObject.AddComponent<RectTransform>();
+        swatchRect.anchorMin = new Vector2(0f, 0.5f);
+        swatchRect.anchorMax = new Vector2(0f, 0.5f);
+        swatchRect.pivot = new Vector2(0f, 0.5f);
+        swatchRect.anchoredPosition = isCurrent ? new Vector2(12f, 4f) : new Vector2(10f, 0f);
+        swatchRect.sizeDelta = swatchSize;
+        var swatch = swatchObject.AddComponent<Image>();
+
+        var nameText = CreateText(slotObject.transform, string.Empty, isCurrent ? 27 : 22, FontStyle.Bold, isCurrent ? new Vector2(28f, 7f) : new Vector2(18f, 0f), isCurrent ? new Vector2(82f, 36f) : new Vector2(62f, 34f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        var labelText = CreateText(slotObject.transform, isCurrent ? "現在" : string.Empty, 13, FontStyle.Bold, new Vector2(0f, -25f), new Vector2(70f, 20f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        labelText.color = new Color(1f, 0.96f, 0.68f, 0.96f);
+
+        return new TargetSlotUi
+        {
+            Background = image,
+            Swatch = swatch,
+            NameText = nameText,
+            LabelText = labelText
+        };
+    }
+
+    private void UpdateTargetQueueUi()
+    {
+        for (var i = 0; i < targetSlotUis.Count; i++)
+        {
+            if (i >= targetQueue.Count)
+            {
+                continue;
+            }
+
+            var slot = targetSlotUis[i];
+            var color = targetQueue[i];
+            var visualColor = GetFireworkColor(color);
+            var isCurrent = i == 0;
+
+            slot.Background.color = Color.Lerp(new Color(0.08f, 0.10f, 0.15f, 0.92f), visualColor, isCurrent ? 0.38f : 0.20f);
+            slot.Swatch.color = visualColor;
+            slot.NameText.text = GetColorName(color);
+            slot.NameText.color = Color.Lerp(visualColor, Color.white, isCurrent ? 0.42f : 0.26f);
+            slot.LabelText.text = isCurrent ? "現在" : string.Empty;
+        }
+    }
+
+    private void CreateColorControlUi(Transform parent)
+    {
+        colorControlUis.Clear();
+        CreateColorControl(parent, KeyCode.A, FireworkColor.Red, new Vector2(50f, -190f));
+        CreateColorControl(parent, KeyCode.S, FireworkColor.Blue, new Vector2(142f, -190f));
+        CreateColorControl(parent, KeyCode.D, FireworkColor.Yellow, new Vector2(234f, -190f));
+        CreateColorControl(parent, KeyCode.F, FireworkColor.Green, new Vector2(326f, -190f));
+    }
+
+    private void CreateColorControl(Transform parent, KeyCode keyCode, FireworkColor color, Vector2 position)
+    {
+        var controlObject = new GameObject(keyCode.ToString() + " " + GetColorName(color));
+        controlObject.transform.SetParent(parent, false);
+
+        var rect = controlObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(78f, 34f);
+
+        var image = controlObject.AddComponent<Image>();
+        var outline = controlObject.AddComponent<Outline>();
+        var label = CreateText(controlObject.transform, keyCode.ToString() + " " + GetColorName(color), 17, FontStyle.Bold, Vector2.zero, new Vector2(78f, 34f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+
+        colorControlUis.Add(new ColorControlUi
+        {
+            Color = color,
+            Background = image,
+            Outline = outline,
+            Label = label
+        });
+    }
+
+    private void UpdateColorControlUi()
+    {
+        for (var i = 0; i < colorControlUis.Count; i++)
+        {
+            var control = colorControlUis[i];
+            var isSelected = control.Color == selectedColor;
+            var color = GetFireworkColor(control.Color);
+
+            control.Background.color = Color.Lerp(new Color(0.10f, 0.12f, 0.18f, 0.92f), color, isSelected ? 0.50f : 0.20f);
+            control.Outline.effectColor = isSelected ? Color.Lerp(color, Color.white, 0.35f) : new Color(0.62f, 0.70f, 0.86f, 0.34f);
+            control.Outline.effectDistance = isSelected ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
+            control.Label.color = isSelected ? Color.white : new Color(0.90f, 0.94f, 1f, 0.88f);
+        }
     }
 
     private void UpdateTimer()
@@ -185,20 +326,9 @@ public sealed class FireworksSceneController : MonoBehaviour
             comboText.text = "COMBO " + currentCombo.ToString();
         }
 
-        if (targetColorText != null)
-        {
-            targetColorText.text = "お題：";
-        }
-
-        if (targetColorNameText != null)
-        {
-            targetColorNameText.text = GetColorName(targetColor);
-            targetColorNameText.color = GetFireworkColor(targetColor);
-        }
-
         if (selectedColorText != null)
         {
-            selectedColorText.text = "選択中：";
+            selectedColorText.text = "装填中：";
         }
 
         if (selectedColorNameText != null)
@@ -207,10 +337,8 @@ public sealed class FireworksSceneController : MonoBehaviour
             selectedColorNameText.color = GetFireworkColor(selectedColor);
         }
 
-        if (colorControlsText != null)
-        {
-            colorControlsText.text = "A 赤 / S 青 / D 黄 / F 緑";
-        }
+        UpdateTargetQueueUi();
+        UpdateColorControlUi();
     }
 
     private void HandleColorInput()
@@ -239,14 +367,51 @@ public sealed class FireworksSceneController : MonoBehaviour
         UpdateHud();
     }
 
-    private void SelectNextTargetColor()
+    private void InitializeTargetQueue()
     {
         if (remainingTime <= 0f)
         {
             return;
         }
 
-        targetColor = (FireworkColor)Random.Range(0, 4);
+        targetQueue.Clear();
+        for (var i = 0; i < TargetQueueSize; i++)
+        {
+            targetQueue.Add(GetRandomFireworkColor());
+        }
+
+        targetStartedAt = Time.time;
+        UpdateHud();
+    }
+
+    private void FinishCurrentTarget(JudgmentResult result)
+    {
+        if (remainingTime <= 0f)
+        {
+            return;
+        }
+
+        ShowJudgment(result);
+        AdvanceTargetQueue();
+    }
+
+    private void AdvanceTargetQueue()
+    {
+        if (remainingTime <= 0f)
+        {
+            return;
+        }
+
+        if (targetQueue.Count > 0)
+        {
+            targetQueue.RemoveAt(0);
+        }
+
+        while (targetQueue.Count < TargetQueueSize)
+        {
+            targetQueue.Add(GetRandomFireworkColor());
+        }
+
         targetStartedAt = Time.time;
         UpdateHud();
     }
@@ -260,8 +425,7 @@ public sealed class FireworksSceneController : MonoBehaviour
 
         if (Time.time - targetStartedAt >= MissTimeout)
         {
-            ShowJudgment(JudgmentResult.Miss);
-            SelectNextTargetColor();
+            FinishCurrentTarget(JudgmentResult.Miss);
         }
     }
 
@@ -350,7 +514,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         var color = GetFireworkColor(selectedColor);
-        ShowJudgment(GetJudgmentResult());
+        FinishCurrentTarget(GetJudgmentResult());
 
         var shell = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         shell.name = "Firework Rocket";
@@ -373,13 +537,12 @@ public sealed class FireworksSceneController : MonoBehaviour
             Fuse = Random.Range(1.15f, 1.55f)
         });
 
-        SelectNextTargetColor();
         UpdateHud();
     }
 
     private JudgmentResult GetJudgmentResult()
     {
-        if (selectedColor != targetColor)
+        if (selectedColor != CurrentTargetColor)
         {
             return JudgmentResult.Miss;
         }
@@ -396,6 +559,19 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         return JudgmentResult.Miss;
+    }
+
+    private FireworkColor CurrentTargetColor
+    {
+        get
+        {
+            if (targetQueue.Count == 0)
+            {
+                return FireworkColor.Red;
+            }
+
+            return targetQueue[0];
+        }
     }
 
     private void ShowJudgment(JudgmentResult result)
@@ -591,6 +767,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
     }
 
+    private static FireworkColor GetRandomFireworkColor()
+    {
+        return (FireworkColor)Random.Range(0, 4);
+    }
+
     private static Material MakeEmissionMaterial(Color color, float intensity)
     {
         var material = new Material(Shader.Find("Standard"));
@@ -640,6 +821,22 @@ public sealed class FireworksSceneController : MonoBehaviour
         public Vector3 Velocity;
         public Color Color;
         public float Fuse;
+    }
+
+    private struct TargetSlotUi
+    {
+        public Image Background;
+        public Image Swatch;
+        public Text NameText;
+        public Text LabelText;
+    }
+
+    private struct ColorControlUi
+    {
+        public FireworkColor Color;
+        public Image Background;
+        public Outline Outline;
+        public Text Label;
     }
 
     private enum FireworkColor
