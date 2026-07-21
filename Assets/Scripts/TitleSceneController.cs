@@ -68,77 +68,44 @@ public sealed class TitleSceneController : MonoBehaviour
         var canvasObject = new GameObject("Title Canvas");
         var canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280f, 720f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        canvasObject.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1280f, 720f);
         canvasObject.AddComponent<GraphicRaycaster>();
 
         EnsureEventSystem();
 
-        var panel = CreatePanel(canvasObject.transform, new Vector2(0.24f, 0.14f), new Vector2(0.76f, 0.86f), "Title Menu Panel");
+        var panel = CreatePanel(canvasObject.transform, Vector2.zero, new Vector2(620f, 500f));
         var highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
 
-        CreateText(panel.transform, "花火打ち上げゲーム", 36, FontStyle.Bold, 52f, TextAnchor.MiddleCenter, new Color(0.95f, 0.97f, 1f));
-        CreateText(panel.transform, "打ち上げ予定を読み、\n正しい色を装填して花火を上げよう。", 17, FontStyle.Normal, 58f, TextAnchor.MiddleCenter, new Color(0.82f, 0.86f, 0.92f));
-        CreateSeparator(panel.transform);
-        CreateText(panel.transform, "HIGH SCORE", 18, FontStyle.Bold, 28f, TextAnchor.MiddleCenter, Color.white);
-        CreateText(panel.transform, highScore.ToString(), 48, FontStyle.Bold, 62f, TextAnchor.MiddleCenter, new Color(1f, 0.84f, 0.31f));
-        CreateSeparator(panel.transform);
-        CreateButton(panel.transform, "START", () => SceneManager.LoadScene("RuleScene"));
-        CreateButton(panel.transform, "QUIT", QuitApplication);
+        CreateText(panel.transform, "花火打ち上げゲーム", 34, FontStyle.Bold, new Vector2(0f, 178f), new Vector2(540f, 48f), new Color(0.95f, 0.97f, 1f));
+        CreateText(panel.transform, "打ち上げ予定を読み、\n正しい色を装填して花火を上げよう。", 16, FontStyle.Normal, new Vector2(0f, 112f), new Vector2(500f, 54f), new Color(0.84f, 0.89f, 0.98f));
+        CreateText(panel.transform, "HIGH SCORE", 16, FontStyle.Bold, new Vector2(0f, 38f), new Vector2(260f, 24f), new Color(0.88f, 0.92f, 1f));
+        CreateText(panel.transform, highScore.ToString(), 30, FontStyle.Bold, new Vector2(0f, 4f), new Vector2(260f, 40f), new Color(1f, 0.94f, 0.45f));
+        CreateButton(panel.transform, "START", new Vector2(0f, -78f), () => SceneManager.LoadScene("RuleScene"));
+        CreateButton(panel.transform, "QUIT", new Vector2(0f, -144f), QuitApplication);
     }
 
-    private static GameObject CreatePanel(Transform parent, Vector2 anchorMin, Vector2 anchorMax, string name)
+    private static GameObject CreatePanel(Transform parent, Vector2 position, Vector2 dimensions)
     {
-        var panelObject = new GameObject(name);
+        var panelObject = new GameObject("Title Menu Panel");
         panelObject.transform.SetParent(parent, false);
         var rect = panelObject.AddComponent<RectTransform>();
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = dimensions;
 
         var image = panelObject.AddComponent<Image>();
-        image.color = new Color(0.059f, 0.090f, 0.165f, 0.86f);
+        image.color = new Color(0.03f, 0.04f, 0.07f, 0.84f);
         var outline = panelObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.36f, 0.42f, 0.54f, 0.58f);
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.54f);
         outline.effectDistance = new Vector2(2f, -2f);
-
-        var layout = panelObject.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(48, 48, 42, 34);
-        layout.spacing = 14f;
-        layout.childAlignment = TextAnchor.UpperCenter;
-        layout.childControlWidth = true;
-        layout.childControlHeight = false;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
         return panelObject;
-    }
-
-    private static void CreateSeparator(Transform parent)
-    {
-        var separator = new GameObject("Separator");
-        separator.transform.SetParent(parent, false);
-        var rect = separator.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(0f, 1f);
-        var image = separator.AddComponent<Image>();
-        image.color = new Color(0.36f, 0.42f, 0.54f, 0.44f);
-        AddLayoutElement(separator, 1f);
     }
 
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions)
     {
         return CreateText(parent, value, size, style, position, dimensions, new Color(0.92f, 0.95f, 1f));
-    }
-
-    private static Text CreateText(Transform parent, string value, int size, FontStyle style, float preferredHeight, TextAnchor alignment, Color color)
-    {
-        var text = CreateText(parent, value, size, style, Vector2.zero, Vector2.zero, color);
-        text.alignment = alignment;
-        AddLayoutElement(text.gameObject, preferredHeight);
-        return text;
     }
 
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions, Color color)
@@ -158,52 +125,39 @@ public sealed class TitleSceneController : MonoBehaviour
         text.fontStyle = style;
         text.alignment = TextAnchor.MiddleCenter;
         text.color = color;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Truncate;
-        text.lineSpacing = 1.08f;
         return text;
     }
 
-    private static Button CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction action)
+    private static Button CreateButton(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction action)
     {
         var buttonObject = new GameObject(label + " Button");
         buttonObject.transform.SetParent(parent, false);
         var rect = buttonObject.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(320f, 56f);
-        AddLayoutElement(buttonObject, 56f, 320f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(240f, 52f);
 
         var image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.118f, 0.165f, 0.267f, 0.98f);
+        image.color = new Color(0.13f, 0.17f, 0.25f, 0.96f);
         var outline = buttonObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.36f, 0.42f, 0.54f, 0.56f);
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.50f);
         outline.effectDistance = new Vector2(1f, -1f);
 
         var button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
         var colors = button.colors;
-        colors.normalColor = new Color(0.118f, 0.165f, 0.267f, 0.98f);
-        colors.highlightedColor = new Color(0.13f, 0.18f, 0.29f, 1f);
-        colors.pressedColor = new Color(0.08f, 0.11f, 0.18f, 1f);
+        colors.normalColor = new Color(0.13f, 0.17f, 0.25f, 0.96f);
+        colors.highlightedColor = new Color(0.15f, 0.19f, 0.28f, 0.98f);
+        colors.pressedColor = new Color(0.10f, 0.13f, 0.20f, 1f);
         colors.selectedColor = colors.normalColor;
         colors.colorMultiplier = 1f;
         colors.fadeDuration = 0.08f;
         button.colors = colors;
         button.onClick.AddListener(action);
 
-        CreateText(buttonObject.transform, label, 21, FontStyle.Bold, Vector2.zero, rect.sizeDelta, Color.white);
+        CreateText(buttonObject.transform, label, 23, FontStyle.Bold, Vector2.zero, rect.sizeDelta, new Color(0.92f, 0.95f, 1f));
         return button;
-    }
-
-    private static void AddLayoutElement(GameObject target, float preferredHeight, float preferredWidth = -1f)
-    {
-        var layoutElement = target.AddComponent<LayoutElement>();
-        layoutElement.minHeight = preferredHeight;
-        layoutElement.preferredHeight = preferredHeight;
-        if (preferredWidth > 0f)
-        {
-            layoutElement.minWidth = preferredWidth;
-            layoutElement.preferredWidth = preferredWidth;
-        }
     }
 
     private static Material MakeMaterial(Color color, float metallic)

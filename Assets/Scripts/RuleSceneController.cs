@@ -66,26 +66,22 @@ public sealed class RuleSceneController : MonoBehaviour
         var canvasObject = new GameObject("Rule Canvas");
         var canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280f, 720f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        canvasObject.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1280f, 720f);
         canvasObject.AddComponent<GraphicRaycaster>();
 
         EnsureEventSystem();
 
         var panel = CreatePanel(canvasObject.transform);
-        CreateText(panel.transform, "遊び方", 32, FontStyle.Bold, 42f, TextAnchor.MiddleCenter, new Color(0.95f, 0.97f, 1f));
-        CreateSeparator(panel.transform);
+        CreateText(panel.transform, "遊び方", 32, FontStyle.Bold, 40f, TextAnchor.MiddleCenter, new Color(0.95f, 0.97f, 1f));
 
-        CreateSection(panel.transform, "1. 色を装填する", "A / S / D / Fキーで、打ち上げる花火の色を選びます。", 52f);
+        CreateSection(panel.transform, "1. 色を装填する", "A/S/D/Fキーで、次に打ち上げる花火の色を選びます。", 50f);
         CreateColorKeyGrid(panel.transform);
-        CreateSection(panel.transform, "2. 花火を打ち上げる", "左クリックで、選んだ色の花火を打ち上げます。", 48f);
-        CreateSection(panel.transform, "3. タイミングを合わせる", "打ち上げ予定を確認し、\n正しい色をタイミングよく打ち上げよう！", 66f);
-        CreateJudgmentRow(panel.transform);
-        CreateSection(panel.transform, "4. その他の操作", "ドラッグ：カメラ回転\nマウスホイール：ズーム", 62f);
-        CreateSection(panel.transform, "5. 制限時間と目標", "制限時間は30秒です。\n高得点と最大コンボを目指しましょう！", 62f);
+        CreateSection(panel.transform, "2. 花火を打ち上げる", "左クリックで、装填中の花火を打ち上げます。", 46f);
+        CreateSection(panel.transform, "3. タイミングを合わせる", "打ち上げ予定を確認し、正しい色をタイミングよく打ち上げます。", 50f);
+        CreateText(panel.transform, "PERFECT：3点\nGOOD：2点\nMISS：0点", 17, FontStyle.Bold, 58f, TextAnchor.MiddleCenter, new Color(0.90f, 0.94f, 1f));
+        CreateSection(panel.transform, "4. その他の操作", "ドラッグ：カメラ回転\nマウスホイール：ズーム", 58f);
+        CreateSection(panel.transform, "5. 制限時間と目標", "制限時間は30秒です。\n高得点と最大コンボを目指してください。", 56f);
         CreateButtonRow(panel.transform);
     }
 
@@ -94,19 +90,19 @@ public sealed class RuleSceneController : MonoBehaviour
         var panelObject = new GameObject("Rule Description Panel");
         panelObject.transform.SetParent(parent, false);
         var rect = panelObject.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.16f, 0.06f);
-        rect.anchorMax = new Vector2(0.84f, 0.94f);
+        rect.anchorMin = new Vector2(0.18f, 0.10f);
+        rect.anchorMax = new Vector2(0.82f, 0.90f);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
 
         var image = panelObject.AddComponent<Image>();
-        image.color = new Color(0.059f, 0.090f, 0.165f, 0.88f);
+        image.color = new Color(0.025f, 0.035f, 0.06f, 0.88f);
         var outline = panelObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.36f, 0.42f, 0.54f, 0.58f);
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.52f);
         outline.effectDistance = new Vector2(2f, -2f);
 
         var layout = panelObject.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(34, 34, 22, 22);
+        layout.padding = new RectOffset(30, 30, 22, 22);
         layout.spacing = 4f;
         layout.childAlignment = TextAnchor.UpperCenter;
         layout.childControlWidth = true;
@@ -114,17 +110,6 @@ public sealed class RuleSceneController : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
         return panelObject;
-    }
-
-    private static void CreateSeparator(Transform parent)
-    {
-        var separator = new GameObject("Separator");
-        separator.transform.SetParent(parent, false);
-        var rect = separator.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(0f, 1f);
-        var image = separator.AddComponent<Image>();
-        image.color = new Color(0.36f, 0.42f, 0.54f, 0.44f);
-        AddLayoutElement(separator, 1f);
     }
 
     private static void CreateSection(Transform parent, string heading, string body, float height)
@@ -190,42 +175,6 @@ public sealed class RuleSceneController : MonoBehaviour
         CreateText(keyObject.transform, key + "：" + colorName, 17, FontStyle.Bold, Vector2.zero, new Vector2(150f, 30f), TextAnchor.MiddleCenter, new Color(0.92f, 0.95f, 1f));
     }
 
-    private static void CreateJudgmentRow(Transform parent)
-    {
-        var rowObject = new GameObject("Judgment Row");
-        rowObject.transform.SetParent(parent, false);
-        AddLayoutElement(rowObject, 48f);
-
-        var layout = rowObject.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 14f;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.childControlWidth = false;
-        layout.childControlHeight = false;
-        layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = false;
-
-        CreateJudgmentBadge(rowObject.transform, "PERFECT", "3点", new Color(0.18f, 0.56f, 0.31f, 0.95f));
-        CreateJudgmentBadge(rowObject.transform, "GOOD", "2点", new Color(0.18f, 0.36f, 0.65f, 0.95f));
-        CreateJudgmentBadge(rowObject.transform, "MISS", "0点", new Color(0.55f, 0.20f, 0.22f, 0.95f));
-    }
-
-    private static void CreateJudgmentBadge(Transform parent, string label, string score, Color backgroundColor)
-    {
-        var badgeObject = new GameObject(label + " Badge");
-        badgeObject.transform.SetParent(parent, false);
-        var rect = badgeObject.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(168f, 38f);
-        AddLayoutElement(badgeObject, 38f, 168f);
-
-        var image = badgeObject.AddComponent<Image>();
-        image.color = backgroundColor;
-        var outline = badgeObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.74f, 0.80f, 0.92f, 0.36f);
-        outline.effectDistance = new Vector2(1f, -1f);
-
-        CreateText(badgeObject.transform, label + "：" + score, 16, FontStyle.Bold, Vector2.zero, rect.sizeDelta, TextAnchor.MiddleCenter, Color.white);
-    }
-
     private static void CreateButtonRow(Transform parent)
     {
         var rowObject = new GameObject("Rule Button Row");
@@ -273,9 +222,6 @@ public sealed class RuleSceneController : MonoBehaviour
         text.fontStyle = style;
         text.alignment = alignment;
         text.color = color;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Truncate;
-        text.lineSpacing = 1.08f;
         return text;
     }
 
@@ -288,24 +234,24 @@ public sealed class RuleSceneController : MonoBehaviour
         AddLayoutElement(buttonObject, 52f, 240f);
 
         var image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.118f, 0.165f, 0.267f, 0.98f);
+        image.color = new Color(0.13f, 0.17f, 0.25f, 0.96f);
         var outline = buttonObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.36f, 0.42f, 0.54f, 0.56f);
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.50f);
         outline.effectDistance = new Vector2(1f, -1f);
 
         var button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
         var colors = button.colors;
-        colors.normalColor = new Color(0.118f, 0.165f, 0.267f, 0.98f);
-        colors.highlightedColor = new Color(0.13f, 0.18f, 0.29f, 1f);
-        colors.pressedColor = new Color(0.08f, 0.11f, 0.18f, 1f);
+        colors.normalColor = new Color(0.13f, 0.17f, 0.25f, 0.96f);
+        colors.highlightedColor = new Color(0.15f, 0.19f, 0.28f, 0.98f);
+        colors.pressedColor = new Color(0.10f, 0.13f, 0.20f, 1f);
         colors.selectedColor = colors.normalColor;
         colors.colorMultiplier = 1f;
         colors.fadeDuration = 0.08f;
         button.colors = colors;
         button.onClick.AddListener(action);
 
-        CreateText(buttonObject.transform, label, 21, FontStyle.Bold, Vector2.zero, rect.sizeDelta, TextAnchor.MiddleCenter, Color.white);
+        CreateText(buttonObject.transform, label, 22, FontStyle.Bold, Vector2.zero, rect.sizeDelta, TextAnchor.MiddleCenter, new Color(0.92f, 0.95f, 1f));
         return button;
     }
 
