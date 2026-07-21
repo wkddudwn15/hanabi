@@ -362,9 +362,10 @@ public sealed class FireworksSceneController : MonoBehaviour
         finalScoreText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, 76f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         CreateText(panelObject.transform, "MAX COMBO", 20, FontStyle.Bold, new Vector2(0f, 12f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         finalMaxComboText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, -28f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        CreateText(panelObject.transform, "RANK", 20, FontStyle.Bold, new Vector2(0f, -92f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        finalRankText = CreateText(panelObject.transform, "C", 76, FontStyle.Bold, new Vector2(0f, -142f), new Vector2(220f, 82f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        finalRankText.color = new Color(1f, 0.95f, 0.42f, 1f);
+        CreateText(panelObject.transform, "RANK", 20, FontStyle.Bold, new Vector2(0f, -72f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalRankText = CreateText(panelObject.transform, "C", 82, FontStyle.Bold, new Vector2(0f, -132f), new Vector2(260f, 96f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalRankText.color = Color.white;
+        finalRankText.raycastTarget = false;
         finalRankOutline = finalRankText.gameObject.AddComponent<Outline>();
         finalRankOutline.effectColor = new Color(0f, 0f, 0f, 0.45f);
         finalRankOutline.effectDistance = new Vector2(2f, -2f);
@@ -409,6 +410,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         resultShown = true;
         remainingTime = 0f;
         resultDisplayTime = 0f;
+        var finalScore = score;
         if (resultText != null)
         {
             resultText.text = string.Empty;
@@ -416,7 +418,7 @@ public sealed class FireworksSceneController : MonoBehaviour
 
         if (finalScoreText != null)
         {
-            finalScoreText.text = score.ToString();
+            finalScoreText.text = finalScore.ToString();
         }
 
         if (finalMaxComboText != null)
@@ -424,19 +426,19 @@ public sealed class FireworksSceneController : MonoBehaviour
             finalMaxComboText.text = maxCombo.ToString();
         }
 
+        var finalRank = GetRank(finalScore);
         if (finalRankText != null)
         {
-            var rank = GetRank(score);
-            finalRankText.text = rank;
-            finalRankText.fontSize = rank == "S" ? 86 : 76;
-            finalRankText.color = rank == "S" ? new Color(1f, 0.96f, 0.28f, 1f) : new Color(1f, 0.95f, 0.42f, 1f);
+            finalRankText.text = finalRank;
+            finalRankText.fontSize = finalRank == "S" ? 92 : 82;
+            finalRankText.color = Color.white;
+            finalRankText.transform.SetAsLastSibling();
         }
 
         if (finalRankOutline != null)
         {
-            var rank = GetRank(score);
-            finalRankOutline.effectColor = rank == "S" ? new Color(1f, 0.52f, 0.10f, 0.82f) : new Color(0f, 0f, 0f, 0.45f);
-            finalRankOutline.effectDistance = rank == "S" ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
+            finalRankOutline.effectColor = finalRank == "S" ? new Color(1f, 0.52f, 0.10f, 0.82f) : new Color(0f, 0f, 0f, 0.65f);
+            finalRankOutline.effectDistance = finalRank == "S" ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
         }
 
         if (resultOverlayObject != null)
