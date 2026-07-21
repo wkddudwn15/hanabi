@@ -18,6 +18,7 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Transform cameraRig;
     private Text timeText;
     private Text scoreText;
+    private Text comboText;
     private Text targetColorText;
     private Text targetColorNameText;
     private Text resultText;
@@ -37,6 +38,8 @@ public sealed class FireworksSceneController : MonoBehaviour
     private float pitch = 18f;
     private float distance = 34f;
     private int score;
+    private int currentCombo;
+    private int maxCombo;
 
     private void Start()
     {
@@ -145,9 +148,10 @@ public sealed class FireworksSceneController : MonoBehaviour
         resultText = CreateText(canvasObject.transform, string.Empty, 42, FontStyle.Bold, new Vector2(0f, 72f), new Vector2(360f, 70f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         timeText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -18f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         scoreText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -58f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
-        selectedColorText = CreateText(canvasObject.transform, "選択中：", 24, FontStyle.Bold, new Vector2(18f, -104f), new Vector2(116f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
-        selectedColorNameText = CreateText(canvasObject.transform, string.Empty, 24, FontStyle.Bold, new Vector2(134f, -104f), new Vector2(92f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
-        colorControlsText = CreateText(canvasObject.transform, "A 赤 / S 青 / D 黄 / F 緑", 18, FontStyle.Normal, new Vector2(18f, -136f), new Vector2(360f, 32f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        comboText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -98f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        selectedColorText = CreateText(canvasObject.transform, "選択中：", 24, FontStyle.Bold, new Vector2(18f, -144f), new Vector2(116f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        selectedColorNameText = CreateText(canvasObject.transform, string.Empty, 24, FontStyle.Bold, new Vector2(134f, -144f), new Vector2(92f, 34f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        colorControlsText = CreateText(canvasObject.transform, "A 赤 / S 青 / D 黄 / F 緑", 18, FontStyle.Normal, new Vector2(18f, -176f), new Vector2(360f, 32f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         UpdateHud();
 
         CreateButton(canvasObject.transform, "Title", new Vector2(-184f, -30f), new Vector2(132f, 42f), () => SceneManager.LoadScene("TitleScene"));
@@ -174,6 +178,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         if (scoreText != null)
         {
             scoreText.text = "Score: " + score.ToString();
+        }
+
+        if (comboText != null)
+        {
+            comboText.text = "COMBO " + currentCombo.ToString();
         }
 
         if (targetColorText != null)
@@ -395,16 +404,30 @@ public sealed class FireworksSceneController : MonoBehaviour
         {
             case JudgmentResult.Perfect:
                 score += 3;
+                IncreaseCombo();
                 ShowResult("PERFECT", new Color(0.85f, 1f, 0.45f));
                 break;
             case JudgmentResult.Good:
                 score += 2;
+                IncreaseCombo();
                 ShowResult("GOOD", new Color(0.45f, 0.78f, 1f));
                 break;
             default:
+                ResetCombo();
                 ShowResult("MISS", new Color(1f, 0.46f, 0.38f));
                 break;
         }
+    }
+
+    private void IncreaseCombo()
+    {
+        currentCombo++;
+        maxCombo = Mathf.Max(maxCombo, currentCombo);
+    }
+
+    private void ResetCombo()
+    {
+        currentCombo = 0;
     }
 
     private void UpdateRockets()
