@@ -8,11 +8,19 @@ public sealed class FireworksSceneController : MonoBehaviour
 {
     private const float GameDurationSeconds = 30f;
     private const float ResultDisplaySeconds = 0.75f;
+    private const int ComboBaseFontSize = 28;
     private const int TargetQueueSize = 5;
     private const float PerfectStart = 0.25f;
     private const float PerfectEnd = 1.00f;
     private const float GoodEnd = 1.60f;
     private const float MissTimeout = 2.20f;
+
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip launchSound;
+    [SerializeField] private AudioClip perfectSound;
+    [SerializeField] private AudioClip goodSound;
+    [SerializeField] private AudioClip missSound;
+    [SerializeField] private AudioClip resultSound;
 
     private readonly List<Rocket> rockets = new List<Rocket>();
     private readonly List<FireworkColor> targetQueue = new List<FireworkColor>();
@@ -24,12 +32,14 @@ public sealed class FireworksSceneController : MonoBehaviour
     private Text scoreText;
     private Text comboText;
     private Text resultText;
+    private RectTransform resultTextRect;
     private Text selectedColorText;
     private Text selectedColorNameText;
     private GameObject resultOverlayObject;
     private Text finalScoreText;
     private Text finalMaxComboText;
     private Text finalRankText;
+    private Outline finalRankOutline;
     private Vector3 launcherPosition = new Vector3(0f, 1.15f, 0f);
     private Vector2 pointerDownPosition;
     private Vector2 lastPointerPosition;
@@ -38,6 +48,8 @@ public sealed class FireworksSceneController : MonoBehaviour
     private FireworkColor selectedColor = FireworkColor.Red;
     private float targetStartedAt;
     private float resultDisplayTime;
+    private float resultDisplayDuration = ResultDisplaySeconds;
+    private float resultPopScale = 1f;
     private float remainingTime = GameDurationSeconds;
     private float yaw;
     private float pitch = 18f;
@@ -53,6 +65,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateLighting();
         CreateWorld();
         CreateUi();
+        EnsureAudioSource();
         InitializeTargetQueue();
     }
 
@@ -158,6 +171,7 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateText(canvasObject.transform, "打ち上げ予定", 24, FontStyle.Bold, new Vector2(0f, -14f), new Vector2(260f, 32f), TextAnchor.UpperCenter, new Vector2(0.5f, 1f));
         CreateTargetQueueUi(canvasObject.transform);
         resultText = CreateText(canvasObject.transform, string.Empty, 42, FontStyle.Bold, new Vector2(0f, 72f), new Vector2(360f, 70f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        resultTextRect = resultText.GetComponent<RectTransform>();
         timeText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -18f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         scoreText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -58f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
         comboText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -98f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
@@ -349,8 +363,11 @@ public sealed class FireworksSceneController : MonoBehaviour
         CreateText(panelObject.transform, "MAX COMBO", 20, FontStyle.Bold, new Vector2(0f, 12f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         finalMaxComboText = CreateText(panelObject.transform, "0", 36, FontStyle.Bold, new Vector2(0f, -28f), new Vector2(220f, 46f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         CreateText(panelObject.transform, "RANK", 20, FontStyle.Bold, new Vector2(0f, -92f), new Vector2(220f, 28f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
-        finalRankText = CreateText(panelObject.transform, "C", 46, FontStyle.Bold, new Vector2(0f, -138f), new Vector2(220f, 56f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
+        finalRankText = CreateText(panelObject.transform, "C", 76, FontStyle.Bold, new Vector2(0f, -142f), new Vector2(220f, 82f), TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f));
         finalRankText.color = new Color(1f, 0.95f, 0.42f, 1f);
+        finalRankOutline = finalRankText.gameObject.AddComponent<Outline>();
+        finalRankOutline.effectColor = new Color(0f, 0f, 0f, 0.45f);
+        finalRankOutline.effectDistance = new Vector2(2f, -2f);
 
         CreateResultButton(panelObject.transform, "RETRY", new Vector2(-92f, -212f), new Vector2(150f, 46f), RestartGame);
         CreateResultButton(panelObject.transform, "TITLE", new Vector2(92f, -212f), new Vector2(150f, 46f), ReturnToTitle);
@@ -409,7 +426,17 @@ public sealed class FireworksSceneController : MonoBehaviour
 
         if (finalRankText != null)
         {
-            finalRankText.text = GetRank(score);
+            var rank = GetRank(score);
+            finalRankText.text = rank;
+            finalRankText.fontSize = rank == "S" ? 86 : 76;
+            finalRankText.color = rank == "S" ? new Color(1f, 0.96f, 0.28f, 1f) : new Color(1f, 0.95f, 0.42f, 1f);
+        }
+
+        if (finalRankOutline != null)
+        {
+            var rank = GetRank(score);
+            finalRankOutline.effectColor = rank == "S" ? new Color(1f, 0.52f, 0.10f, 0.82f) : new Color(0f, 0f, 0f, 0.45f);
+            finalRankOutline.effectDistance = rank == "S" ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
         }
 
         if (resultOverlayObject != null)
@@ -417,6 +444,8 @@ public sealed class FireworksSceneController : MonoBehaviour
             resultOverlayObject.transform.SetAsLastSibling();
             resultOverlayObject.SetActive(true);
         }
+
+        PlaySound(resultSound);
     }
 
     private string GetRank(int finalScore)
@@ -447,6 +476,32 @@ public sealed class FireworksSceneController : MonoBehaviour
     private void ReturnToTitle()
     {
         SceneManager.LoadScene("TitleScene");
+    }
+
+    private void EnsureAudioSource()
+    {
+        if (audioSource != null)
+        {
+            return;
+        }
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource == null || clip == null)
+        {
+            return;
+        }
+
+        audioSource.PlayOneShot(clip);
     }
 
     private void UpdateTimer()
@@ -483,6 +538,8 @@ public sealed class FireworksSceneController : MonoBehaviour
         if (comboText != null)
         {
             comboText.text = "COMBO " + currentCombo.ToString();
+            comboText.fontSize = GetComboFontSize();
+            comboText.color = GetComboColor();
         }
 
         if (selectedColorText != null)
@@ -596,13 +653,18 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         resultDisplayTime = Mathf.Max(0f, resultDisplayTime - Time.deltaTime);
+        UpdateJudgmentAnimation();
         if (resultDisplayTime <= 0f && resultText != null)
         {
             resultText.text = string.Empty;
+            if (resultTextRect != null)
+            {
+                resultTextRect.localScale = Vector3.one;
+            }
         }
     }
 
-    private void ShowResult(string message, Color color)
+    private void ShowResult(string message, Color color, int fontSize, float popScale)
     {
         if (resultText == null)
         {
@@ -611,7 +673,70 @@ public sealed class FireworksSceneController : MonoBehaviour
 
         resultText.text = message;
         resultText.color = color;
+        resultText.fontSize = fontSize;
+        resultPopScale = popScale;
+        resultDisplayDuration = ResultDisplaySeconds;
         resultDisplayTime = ResultDisplaySeconds;
+        UpdateJudgmentAnimation();
+    }
+
+    private void UpdateJudgmentAnimation()
+    {
+        if (resultTextRect == null || resultDisplayDuration <= 0f)
+        {
+            return;
+        }
+
+        var normalized = 1f - Mathf.Clamp01(resultDisplayTime / resultDisplayDuration);
+        var scale = Mathf.Lerp(resultPopScale, 1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(normalized * 1.8f)));
+        resultTextRect.localScale = Vector3.one * scale;
+
+        if (resultText != null && resultDisplayTime < 0.22f)
+        {
+            var color = resultText.color;
+            color.a = Mathf.Clamp01(resultDisplayTime / 0.22f);
+            resultText.color = color;
+        }
+    }
+
+    private int GetComboFontSize()
+    {
+        if (currentCombo >= 20)
+        {
+            return 40;
+        }
+
+        if (currentCombo >= 10)
+        {
+            return 36;
+        }
+
+        if (currentCombo >= 5)
+        {
+            return 32;
+        }
+
+        return ComboBaseFontSize;
+    }
+
+    private Color GetComboColor()
+    {
+        if (currentCombo >= 20)
+        {
+            return new Color(1f, 0.90f, 0.20f, 1f);
+        }
+
+        if (currentCombo >= 10)
+        {
+            return new Color(0.55f, 0.92f, 1f, 1f);
+        }
+
+        if (currentCombo >= 5)
+        {
+            return new Color(0.72f, 1f, 0.58f, 1f);
+        }
+
+        return new Color(0.90f, 0.94f, 1f, 0.9f);
     }
 
     private void HandleLaunchInput()
@@ -673,6 +798,8 @@ public sealed class FireworksSceneController : MonoBehaviour
         }
 
         var color = GetFireworkColor(selectedColor);
+        PlaySound(launchSound);
+        CreateLaunchFlash(color);
         FinishCurrentTarget(GetJudgmentResult());
 
         var shell = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -697,6 +824,48 @@ public sealed class FireworksSceneController : MonoBehaviour
         });
 
         UpdateHud();
+    }
+
+    private void CreateLaunchFlash(Color color)
+    {
+        var flashObject = new GameObject("Launch Flash");
+        flashObject.transform.position = launcherPosition;
+
+        var light = flashObject.AddComponent<Light>();
+        light.type = LightType.Point;
+        light.color = color;
+        light.intensity = 7f;
+        light.range = 9f;
+
+        var particles = flashObject.AddComponent<ParticleSystem>();
+        particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        var main = particles.main;
+        main.playOnAwake = false;
+        main.duration = 0.35f;
+        main.loop = false;
+        main.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.38f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(1.6f, 4.2f);
+        main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.22f);
+        main.gravityModifier = -0.12f;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.startColor = new ParticleSystem.MinMaxGradient(Color.Lerp(color, Color.white, 0.25f), color);
+
+        var emission = particles.emission;
+        emission.rateOverTime = 0f;
+        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)36) });
+
+        var shape = particles.shape;
+        shape.shapeType = ParticleSystemShapeType.Cone;
+        shape.angle = 18f;
+        shape.radius = 0.28f;
+        shape.rotation = new Vector3(-90f, 0f, 0f);
+
+        var renderer = particles.GetComponent<ParticleSystemRenderer>();
+        renderer.material = MakeParticleMaterial(color);
+        renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+        flashObject.AddComponent<LaunchFlashCleanup>().Initialize(light, 0.42f);
+        particles.Play();
     }
 
     private JudgmentResult GetJudgmentResult()
@@ -740,16 +909,19 @@ public sealed class FireworksSceneController : MonoBehaviour
             case JudgmentResult.Perfect:
                 score += 3;
                 IncreaseCombo();
-                ShowResult("PERFECT", new Color(0.85f, 1f, 0.45f));
+                ShowResult("PERFECT", new Color(1f, 0.96f, 0.25f, 1f), 54, 1.28f);
+                PlaySound(perfectSound);
                 break;
             case JudgmentResult.Good:
                 score += 2;
                 IncreaseCombo();
-                ShowResult("GOOD", new Color(0.45f, 0.78f, 1f));
+                ShowResult("GOOD", new Color(0.48f, 0.86f, 1f, 0.96f), 46, 1.14f);
+                PlaySound(goodSound);
                 break;
             default:
                 ResetCombo();
-                ShowResult("MISS", new Color(1f, 0.46f, 0.38f));
+                ShowResult("MISS", new Color(0.95f, 0.35f, 0.32f, 0.72f), 36, 1.04f);
+                PlaySound(missSound);
                 break;
         }
     }
@@ -1031,6 +1203,33 @@ public sealed class FireworksSceneController : MonoBehaviour
             if (flash != null)
             {
                 flash.intensity = Mathf.Lerp(8f, 0f, Mathf.Clamp01(age / 0.55f));
+            }
+
+            if (age >= lifetime)
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
+
+    private sealed class LaunchFlashCleanup : MonoBehaviour
+    {
+        private Light flash;
+        private float lifetime;
+        private float age;
+
+        public void Initialize(Light targetLight, float seconds)
+        {
+            flash = targetLight;
+            lifetime = seconds;
+        }
+
+        private void Update()
+        {
+            age += Time.deltaTime;
+            if (flash != null)
+            {
+                flash.intensity = Mathf.Lerp(7f, 0f, Mathf.Clamp01(age / 0.18f));
             }
 
             if (age >= lifetime)
