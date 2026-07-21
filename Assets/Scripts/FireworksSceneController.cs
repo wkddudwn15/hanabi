@@ -6,16 +6,22 @@ using UnityEngine.UI;
 
 public sealed class FireworksSceneController : MonoBehaviour
 {
+    private const float GameDurationSeconds = 30f;
+
     private readonly List<Rocket> rockets = new List<Rocket>();
     private Camera mainCamera;
     private Transform cameraRig;
+    private Text timeText;
+    private Text scoreText;
     private Vector3 launcherPosition = new Vector3(0f, 1.15f, 0f);
     private Vector2 pointerDownPosition;
     private Vector2 lastPointerPosition;
     private bool pointerStartedOverUi;
+    private float remainingTime = GameDurationSeconds;
     private float yaw;
     private float pitch = 18f;
     private float distance = 34f;
+    private int score;
 
     private void Start()
     {
@@ -28,9 +34,11 @@ public sealed class FireworksSceneController : MonoBehaviour
 
     private void Update()
     {
+        UpdateTimer();
         HandleCameraInput();
         HandleLaunchInput();
         UpdateRockets();
+        UpdateHud();
     }
 
     private void CreateCamera()
@@ -113,8 +121,35 @@ public sealed class FireworksSceneController : MonoBehaviour
         EnsureEventSystem();
 
         CreateText(canvasObject.transform, "クリック: 花火発射 / ドラッグ: カメラ回転 / ホイール: ズーム", 18, FontStyle.Normal, new Vector2(18f, 18f), new Vector2(620f, 32f), TextAnchor.LowerLeft, new Vector2(0f, 0f));
+        timeText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -18f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        scoreText = CreateText(canvasObject.transform, string.Empty, 28, FontStyle.Bold, new Vector2(18f, -58f), new Vector2(220f, 40f), TextAnchor.UpperLeft, new Vector2(0f, 1f));
+        UpdateHud();
+
         CreateButton(canvasObject.transform, "Title", new Vector2(-184f, -30f), new Vector2(132f, 42f), () => SceneManager.LoadScene("TitleScene"));
         CreateButton(canvasObject.transform, "Quit", new Vector2(-40f, -30f), new Vector2(112f, 42f), QuitApplication);
+    }
+
+    private void UpdateTimer()
+    {
+        if (remainingTime <= 0f)
+        {
+            return;
+        }
+
+        remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
+    }
+
+    private void UpdateHud()
+    {
+        if (timeText != null)
+        {
+            timeText.text = "Time: " + Mathf.CeilToInt(remainingTime).ToString();
+        }
+
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + score.ToString();
+        }
     }
 
     private void HandleLaunchInput()
@@ -170,6 +205,11 @@ public sealed class FireworksSceneController : MonoBehaviour
 
     private void LaunchRocket()
     {
+        if (remainingTime <= 0f)
+        {
+            return;
+        }
+
         var color = Color.HSVToRGB(Random.value, 0.92f, 1f);
         var shell = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         shell.name = "Firework Rocket";
@@ -191,6 +231,9 @@ public sealed class FireworksSceneController : MonoBehaviour
             Velocity = new Vector3(Random.Range(-0.9f, 0.9f), Random.Range(15.5f, 20.5f), Random.Range(-0.9f, 0.9f)),
             Fuse = Random.Range(1.15f, 1.55f)
         });
+
+        score++;
+        UpdateHud();
     }
 
     private void UpdateRockets()
