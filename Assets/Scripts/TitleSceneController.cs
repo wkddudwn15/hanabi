@@ -74,14 +74,41 @@ public sealed class TitleSceneController : MonoBehaviour
 
         EnsureEventSystem();
 
-        CreateText(canvasObject.transform, "花火打ち上げゲーム", 48, FontStyle.Bold, new Vector2(0f, 158f), new Vector2(820f, 76f));
-        CreateText(canvasObject.transform, "打ち上げ予定を読み、正しい色を装填して花火を上げよう。", 21, FontStyle.Normal, new Vector2(0f, 92f), new Vector2(840f, 46f));
-        CreateText(canvasObject.transform, "HIGH SCORE\n" + PlayerPrefs.GetInt(HighScoreKey, 0).ToString(), 22, FontStyle.Bold, new Vector2(0f, 24f), new Vector2(300f, 62f));
-        CreateButton(canvasObject.transform, "START", new Vector2(0f, -56f), () => SceneManager.LoadScene("RuleScene"));
-        CreateButton(canvasObject.transform, "QUIT", new Vector2(0f, -136f), QuitApplication);
+        var panel = CreatePanel(canvasObject.transform, Vector2.zero, new Vector2(620f, 500f));
+        var highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+
+        CreateText(panel.transform, "花火打ち上げゲーム", 34, FontStyle.Bold, new Vector2(0f, 178f), new Vector2(540f, 48f), new Color(0.95f, 0.97f, 1f));
+        CreateText(panel.transform, "打ち上げ予定を読み、\n正しい色を装填して花火を上げよう。", 16, FontStyle.Normal, new Vector2(0f, 112f), new Vector2(500f, 54f), new Color(0.84f, 0.89f, 0.98f));
+        CreateText(panel.transform, "HIGH SCORE", 16, FontStyle.Bold, new Vector2(0f, 38f), new Vector2(260f, 24f), new Color(0.88f, 0.92f, 1f));
+        CreateText(panel.transform, highScore.ToString(), 30, FontStyle.Bold, new Vector2(0f, 4f), new Vector2(260f, 40f), new Color(1f, 0.94f, 0.45f));
+        CreateButton(panel.transform, "START", new Vector2(0f, -78f), () => SceneManager.LoadScene("RuleScene"));
+        CreateButton(panel.transform, "QUIT", new Vector2(0f, -144f), QuitApplication);
+    }
+
+    private static GameObject CreatePanel(Transform parent, Vector2 position, Vector2 dimensions)
+    {
+        var panelObject = new GameObject("Title Menu Panel");
+        panelObject.transform.SetParent(parent, false);
+        var rect = panelObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = dimensions;
+
+        var image = panelObject.AddComponent<Image>();
+        image.color = new Color(0.03f, 0.04f, 0.07f, 0.84f);
+        var outline = panelObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.54f);
+        outline.effectDistance = new Vector2(2f, -2f);
+        return panelObject;
     }
 
     private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions)
+    {
+        return CreateText(parent, value, size, style, position, dimensions, new Color(0.92f, 0.95f, 1f));
+    }
+
+    private static Text CreateText(Transform parent, string value, int size, FontStyle style, Vector2 position, Vector2 dimensions, Color color)
     {
         var textObject = new GameObject(value);
         textObject.transform.SetParent(parent, false);
@@ -97,7 +124,7 @@ public sealed class TitleSceneController : MonoBehaviour
         text.fontSize = size;
         text.fontStyle = style;
         text.alignment = TextAnchor.MiddleCenter;
-        text.color = new Color(0.92f, 0.95f, 1f);
+        text.color = color;
         return text;
     }
 
@@ -112,13 +139,24 @@ public sealed class TitleSceneController : MonoBehaviour
         rect.sizeDelta = new Vector2(240f, 52f);
 
         var image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.14f, 0.18f, 0.28f, 0.94f);
+        image.color = new Color(0.13f, 0.17f, 0.25f, 0.96f);
+        var outline = buttonObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.42f, 0.50f, 0.64f, 0.50f);
+        outline.effectDistance = new Vector2(1f, -1f);
 
         var button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
+        var colors = button.colors;
+        colors.normalColor = new Color(0.13f, 0.17f, 0.25f, 0.96f);
+        colors.highlightedColor = new Color(0.15f, 0.19f, 0.28f, 0.98f);
+        colors.pressedColor = new Color(0.10f, 0.13f, 0.20f, 1f);
+        colors.selectedColor = colors.normalColor;
+        colors.colorMultiplier = 1f;
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
         button.onClick.AddListener(action);
 
-        CreateText(buttonObject.transform, label, 23, FontStyle.Bold, Vector2.zero, rect.sizeDelta);
+        CreateText(buttonObject.transform, label, 23, FontStyle.Bold, Vector2.zero, rect.sizeDelta, new Color(0.92f, 0.95f, 1f));
         return button;
     }
 
