@@ -264,7 +264,9 @@ public sealed class FireworksSceneController : MonoBehaviour
         explosionObject.transform.position = position;
 
         var particles = explosionObject.AddComponent<ParticleSystem>();
+        particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         var main = particles.main;
+        main.playOnAwake = false;
         main.duration = 2.5f;
         main.loop = false;
         main.startLifetime = new ParticleSystem.MinMaxCurve(1.7f, 2.45f);
